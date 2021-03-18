@@ -1,0 +1,160 @@
+<resources>
+    <string name="app_name">SamplePublisher</string>
+    <string name="empty_data">Empty data</string>
+
+    <!-- SplashScreenActivity -->
+    <string name="org_name">National Institute of Informatics</string>
+
+    <!-- LauncherActivity -->
+    <string name="activity_name_launcher">Launcher</string>
+    <string name="button_run">Run</string>
+    <string name="button_settings">Settings</string>
+    <string name="menu_help">Help</string>
+    <string name="menu_about">About</string>
+
+    <!-- MainActivity -->
+    <string name="activity_name_main">Main</string>
+    <string name="stats_last_sent">Last Sent: </string>
+    <string name="stats_sent_count">Sent Msg: </string>
+    <string name="button_label_reset">Reset</string>
+    <string name="button_label_run">Run</string>
+    <string name="button_label_stop">Stop</string>
+
+    <!-- ErrorDialog -->
+    <string name="dialog_title_error">Error</string>
+
+    <!-- InProgressDialog -->
+    <string name="dialog_title_connecting">Connecting to Broker…</string>
+
+    <!-- SettingsActivity -->
+    <string name="activity_name_settings">Settings</string>
+    <string name="pref_summary_mandatory_notset">Not set: MANDATORY!</string>
+    <string name="pref_summary_password_notset">Not set</string>
+    <string name="pref_summary_password_mask">*****</string>
+
+    <!--
+        Sensor publisher specific settings
+    -->
+    <!-- SensorSettingsFragment -->
+    <string name="pref_title_sensors">Sensors</string>
+    <string name="pref_summary_sensors">Sensor parameters and publishing info</string>
+
+    <string name="pref_title_sensor_control">Sensor Control</string>
+    <string name="pref_key_sensor_interval_timer">interval_timer</string>
+    <string name="pref_item_sensor_interval_timer">Interval Timer (seconds)</string>
+
+    <string name="pref_title_user_data">User Data</string>
+    <string name="pref_key_user_data_publisher">publisher</string>
+    <string name="pref_item_user_data_publisher">User Data: Publisher</string>
+    <string name="pref_key_user_data_note">note</string>
+    <string name="pref_item_user_data_note">User Data: Note</string>
+
+    <string name="pref_title_location">Location</string>
+    <string name="pref_key_location_longitude">longitude</string>
+    <string name="pref_item_location_longitude">Location: Longitude</string>
+    <string name="pref_key_location_latitude">latitude</string>
+    <string name="pref_item_location_latitude">Location: Latitude</string>
+
+    <!--
+        SINETStream common settings
+    -->
+    <string name="pref_title_sinetstream">SINETStream</string>
+    <string name="pref_summary_sinetstream">SINETStream control parameters</string>
+
+    <!-- ServiceSettingsFragment -->
+    <string name="pref_title_service">Service</string>
+    <string name="pref_summary_service">Service attributes</string>
+    <string name="pref_key_service_name">service_name</string>
+    <string name="pref_item_service_name">Service Name</string>
+    <string name="pref_key_service_topics">service_topics</string>
+    <string name="pref_item_service_topics">Topic Names</string>
+    <string name="pref_key_service_consistency">service_consistency</string>
+    <string name="pref_item_service_consistency">Service Consistency</string>
+
+    <!-- BrokerSettingsFragment -->
+    <string name="pref_title_brokers">Brokers</string>
+    <string name="pref_summary_brokers">Target broker attributes</string>
+    <string name="pref_key_broker_network_address">broker_network_address</string>
+    <string name="pref_item_broker_network_address">IP Address (or FQDN)</string>
+    <string name="pref_key_broker_listen_port">broker_listen_port</string>
+    <string name="pref_item_broker_listen_port">Port Number</string>
+
+    <!-- UserAuthSettingsFragment -->
+    <string name="pref_title_userauth">User Authentication</string>
+    <string name="pref_summary_userauth">User account and password</string>
+    <string name="pref_key_toggle_userauth">toggle_user_auth</string>
+    <string name="pref_item_toggle_userauth">Enable User Authentication</string>
+    <string name="pref_key_userauth_username">userauth_username</string>
+    <string name="pref_item_userauth_username">User Account</string>
+    <string name="pref_key_userauth_password">userauth_password</string>
+    <string name="pref_item_userauth_password">User Password</string>
+
+    <!-- TlsSettingsFragment -->
+    <string name="pref_title_tls">SSL/TLS parameters</string>
+    <string name="pref_summary_tls">Secure network connection</string>
+    <string name="pref_key_toggle_tls">toggle_ssltls</string>
+    <string name="pref_item_toggle_tls">Enable SSL/TLS layer</string>
+    <string name="pref_key_tls_ca_certs">tls_ca_certs</string>
+    <string name="pref_item_tls_ca_certs">CA certification filename</string>
+    <string name="pref_key_tls_certfile">tls_certfile</string>
+    <string name="pref_item_tls_certfile">Client certification filename</string>
+    <string name="pref_key_tls_keyfilePassword">tls_keyfilePassword</string>
+    <string name="pref_item_tls_keyfilePassword">Client certification password</string>
+    <string name="pref_key_tls_check_hostname">tls_check_hostname</string>
+    <string name="pref_item_tls_check_hostname">Enable hostname verification</string>
+
+    <!-- CryptoSettingsFragment -->
+    <string name="pref_title_crypto">Data Encryption</string>
+    <string name="pref_summary_crypto">Protect sensitive data</string>
+    <string name="pref_key_toggle_crypto">toggle_crypto</string>
+    <string name="pref_item_toggle_crypto">Enable Data Encryption</string>
+
+    <string name="pref_title_crypto_parameters">Cryptographic Parameters</string>
+    <string name="pref_key_crypto_algorithm">crypto_algorithm</string>
+    <string name="pref_item_crypto_algorithm">Algorithm</string>
+    <string name="pref_key_crypto_key_length">crypto_key_length</string>
+    <string name="pref_item_crypto_key_length">Key Length</string>
+    <string name="pref_key_crypto_mode">crypto_mode</string>
+    <string name="pref_item_crypto_mode">Modes</string>
+    <string name="pref_key_crypto_padding">crypto_padding</string>
+    <string name="pref_item_crypto_padding">Padding Scheme</string>
+
+    <string name="pref_title_crypto_kdf">Key Derivation Function</string>
+    <string name="pref_key_crypto_kdf_password">crypto_kdf_password</string>
+    <string name="pref_item_crypto_kdf_password">Password</string>
+    <string name="pref_key_crypto_kdf_algorithm">crypto_kdf_algorithm</string>
+    <string name="pref_item_crypto_kdf_algorithm">Algorithm</string>
+    <string name="pref_key_crypto_kdf_salt_bytes">crypto_kdf_salt_bytes</string>
+    <string name="pref_item_crypto_kdf_salt_bytes">Salt Bytes</string>
+    <string name="pref_key_crypto_kdf_iteration">crypto_kdf_iteration</string>
+    <string name="pref_item_crypto_kdf_iteration">Iteration</string>
+
+    <!-- MqttSettingsFragment -->
+    <string name="pref_title_mqtt">MQTT</string>
+    <string name="pref_summary_mqtt">MQTT parameters</string>
+    <string name="pref_key_mqtt_clean_session">mqtt_clean_session</string>
+    <string name="pref_item_mqtt_clean_session">Clean session</string>
+    <string name="pref_key_mqtt_protocol">mqtt_version</string>
+    <string name="pref_item_mqtt_protocol">Version</string>
+    <string name="pref_default_mqtt_protocol">DEFAULT</string>
+    <string name="pref_key_mqtt_transport">mqtt_transport</string>
+    <string name="pref_item_mqtt_transport">Transport Protocol</string>
+    <string name="pref_key_mqtt_qos">mqtt_qos</string>
+    <string name="pref_item_mqtt_qos">QoS to deliver message</string>
+    <string name="pref_default_mqtt_qos">0</string>
+    <string name="pref_key_mqtt_retain">mqtt_retain</string>
+    <string name="pref_item_mqtt_retain">Retain published message</string>
+
+    <string name="pref_key_mqtt_max_inflight_messages_set_inflight">mqtt_max_inflight_messages</string>
+    <string name="pref_item_mqtt_max_inflight_messages_set_inflight">Max inflight messages</string>
+
+    <string name="pref_key_mqtt_connect_keepalive">mqtt_connect_keepalive</string>
+    <string name="pref_item_mqtt_connect_keepalive">Keep alive interval (seconds)</string>
+    <string name="pref_key_mqtt_connect_automatic_reconnect">mqtt_connect_automatic_reconnect</string>
+    <string name="pref_item_mqtt_connect_automatic_reconnect">Enable automatic reconnect</string>
+    <string name="pref_key_mqtt_connect_connection_timeout">mqtt_connect_connection_timeout</string>
+    <string name="pref_item_mqtt_connect_connection_timeout">Connection timeout (seconds)</string>
+
+    <!-- TODO: Remove or change this placeholder text -->
+    <string name="hello_blank_fragment">Hello blank fragment</string>
+</resources>

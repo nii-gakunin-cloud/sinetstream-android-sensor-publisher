@@ -1,0 +1,9 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- Default screen margins, per the Android Design guidelines. -->
+
+    <!-- https://material.io/guidelines/components/dialogs.html -->
+    <dimen name="button_height">36dp</dimen>
+    <dimen name="minimum_button_width">64dp</dimen>
+
+</resources>
