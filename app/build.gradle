@@ -31,32 +31,6 @@ android {
 // https://github.com/eclipse/paho.mqtt.android#gradle
 //
 repositories {
-    // BEGIN:NII:PRIVATE
-    maven {
-        // For SINETStreamHelper library
-        url "https://gitlab.vcp-handson.org/api/v4/projects/39/packages/maven"
-        name "GitLab"
-        credentials(HttpHeaderCredentials) {
-            name = 'Private-Token'
-            value = gitLabPrivateToken
-        }
-        authentication {
-            header(HttpHeaderAuthentication)
-        }
-    }
-    maven {
-        // For SINETStream-android library
-        url "https://gitlab.vcp-handson.org/api/v4/projects/22/packages/maven"
-        name "GitLab"
-        credentials(HttpHeaderCredentials) {
-            name = 'Private-Token'
-            value = gitLabPrivateToken
-        }
-        authentication {
-            header(HttpHeaderAuthentication)
-        }
-    }
-    // END:NII:PRIVATE
     maven {
         url "https://repo.eclipse.org/content/repositories/paho-snapshots/"
     }
