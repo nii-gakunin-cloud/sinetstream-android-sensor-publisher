@@ -28,7 +28,7 @@ refers to `Publisher` client defined in Pub/Sub messaging model.
 Most of Android hardware has several built-in sensor devices.
 Once user enables these sensors via GUI, readout values will be
 notified from
-[SINETStreamHelper](https://www.sinetstream.net/docs/userguide/android_helper.html)
+[SINETStreamHelper](https://www.sinetstream.net/docs/userguide/libhelper.html)
 library as a JSON data. Then it will be sent as a
 `SINETStream message` to the peer `Broker` via
 [SINETStream for Android](https://www.sinetstream.net/docs/userguide/android.html)
@@ -39,17 +39,17 @@ visualization etc.
 
 ```
      Android Application
-    +-------------------------------+
-    |  +--------+    +-----------+  |
-    |  | Writer | <--| HelperLib |  |
-    |  +--------+    +-----------+  |
-    |      |                A       |
-    |      V                |       |
-    |  +-------------+  +--------+  |
-    |  | SINETStream |  | Sensor |  |
-    |  | for Android |  | Devices|  |                      Backend
-    |  +-------------+  +--------+  |                      System
-    +------|------------------------+                     +----------+
+    +---------------------------------+
+    |  +--------+ JSON +-----------+  |
+    |  | Writer | <----| libhelper |  |
+    |  +--------+      +-----------+  |
+    |      |                A         |
+    |      V                | Raw data|
+    |  +-------------+  +--------+    |
+    |  | SINETStream |  | Sensor |    |
+    |  | for Android |  | Devices|    |                    Backend
+    |  +-------------+  +--------+    |                    System
+    +------|--------------------------+                   +----------+
            |                             (         )      |          |
            |                             (         )      |          |
            |                             ( Network )      | +------+ |
@@ -67,10 +67,10 @@ visualization etc.
 
 ## How to use
 
-See section `SAMPLE2 (sinetstream-android-sensor-publisher)` in 
-[TUTORIAL](https://www.sinetstream.net/docs/tutorial-android/)
+See section `TUTORIAL - STEP2: Run sensor information collecor
+(sinetstream-android-sensor-publisher)` in
+[Quick Start Guide (Android)](https://www.sinetstream.net/docs/tutorial-android/)
 for details.
-
 
 ## License
 

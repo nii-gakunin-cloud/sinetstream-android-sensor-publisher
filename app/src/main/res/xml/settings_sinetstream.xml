@@ -49,5 +49,6 @@
     <Preference
         app:title="@string/pref_title_crypto"
         app:summary="@string/pref_summary_crypto"
+        app:enabled="false"
         app:fragment="com.example.samplepublisher.ui.settings.CryptoSettingsFragment"/>
 </PreferenceScreen>

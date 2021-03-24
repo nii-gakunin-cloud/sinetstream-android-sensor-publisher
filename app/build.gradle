@@ -31,6 +31,7 @@ android {
 // https://github.com/eclipse/paho.mqtt.android#gradle
 //
 repositories {
+    // BEGIN:NII:PRIVATE
     maven {
         // For SINETStreamHelper library
         url "https://gitlab.vcp-handson.org/api/v4/projects/39/packages/maven"
@@ -55,6 +56,7 @@ repositories {
             header(HttpHeaderAuthentication)
         }
     }
+    // END:NII:PRIVATE
     maven {
         url "https://repo.eclipse.org/content/repositories/paho-snapshots/"
     }
@@ -75,8 +77,8 @@ dependencies {
     androidTestImplementation 'androidx.test.ext:junit:1.1.2'
     androidTestImplementation 'androidx.test.espresso:espresso-core:3.3.0'
 
-    implementation 'jp.ad.sinet.stream.android.helper:libhelper:1.5.0'
-    implementation 'jp.ad.sinet.sinetstream:SINETStream-android:1.5.0'
+    implementation 'jp.ad.sinet.stream.android.helper:libhelper:1.5.1'
+    implementation 'jp.ad.sinet.sinetstream:SINETStream-android:1.5.1'
     implementation 'org.eclipse.paho:org.eclipse.paho.client.mqttv3:1.2.5'
     implementation 'org.eclipse.paho:org.eclipse.paho.android.service:1.1.1'
 }

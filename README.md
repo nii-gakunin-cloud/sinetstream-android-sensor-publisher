@@ -27,7 +27,8 @@ under the License.
 クライアントのうち`Publisher`機能(`Writer`)を実装する。  
 大抵のAndroid端末は複数の組み込みセンサーデバイスを具備している。
 GUI操作によりユーザが指定したこれらのセンサーの読取値を
-[SINETStreamHelperライブラリ](https://www.sinetstream.net/docs/userguide/libhelper.html)よりJSON形式で受け取り、これをAndroid版の
+[SINETStreamHelperライブラリ](https://www.sinetstream.net/docs/userguide/libhelper.html)
+よりJSON形式で受け取り、これをAndroid版の
 [SINETStreamライブラリ](https://www.sinetstream.net/docs/userguide/android.html)
 を介して`SINETStreamメッセージ`として対向`Broker`に送信する。  
 一方のバックエンド側では、データ可視化などのため受信メッセージ
@@ -64,8 +65,9 @@ GUI操作によりユーザが指定したこれらのセンサーの読取値�
 ## 使用例
 
 別紙
-[チュートリアル文書](https://www.sinetstream.net/docs/tutorial-android/)
-のうち、`SAMPLE2 (sinetstream-android-sensor-publisher)`の項を参照のこと。
+[Android版クイックスタートガイド](https://www.sinetstream.net/docs/tutorial-android/)
+のうち、`チュートリアル - STEP2: センサ情報収集アプリの実行 (sinetstream-android-sensor-publisher)`
+の項を参照のこと。
 
 
 ## ライセンス
