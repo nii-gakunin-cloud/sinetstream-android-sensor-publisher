@@ -1,7 +1,7 @@
 <resources>
     <string name="app_name">Sensor Publisher</string>
     <string name="icon_label">Sensor</string>
-    <string name="empty_data">Empty data</string>
+    <string name="empty_data">No sensors available</string>
 
     <!-- SplashScreenActivity -->
     <string name="org_name">National Institute of Informatics</string>

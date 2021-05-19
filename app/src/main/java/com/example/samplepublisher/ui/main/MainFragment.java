@@ -8,12 +8,15 @@ import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
 import android.widget.CompoundButton;
+import android.widget.FrameLayout;
 import android.widget.ImageButton;
+import android.widget.LinearLayout;
 import android.widget.TextView;
 import android.widget.ToggleButton;
 
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
+import androidx.constraintlayout.widget.ConstraintLayout;
 import androidx.fragment.app.Fragment;
 import androidx.recyclerview.widget.LinearLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
@@ -156,6 +159,16 @@ public class MainFragment extends Fragment {
         }
     }
 
+    public void showProgressBar(boolean enabled) {
+        Activity activity = getActivity();
+        if (activity instanceof MainActivity) {
+            LinearLayout progressBar = activity.findViewById(R.id.progressBar);
+            if (progressBar != null) {
+                progressBar.setVisibility(enabled ? View.VISIBLE : View.GONE);
+            }
+        }
+    }
+
     public void showEmptyMessage(boolean isEmpty) {
         Activity activity = getActivity();
         if (activity != null) {
@@ -178,6 +191,11 @@ public class MainFragment extends Fragment {
                 if (emptyView != null) {
                     emptyView.setVisibility(View.GONE);
                 }
+            }
+
+            ConstraintLayout controlBar = activity.findViewById(R.id.controlBar);
+            if (controlBar != null) {
+                controlBar.setVisibility(View.VISIBLE);
             }
         } else {
             String message = TAG + ": showEmptyMessage: Activity not found?";

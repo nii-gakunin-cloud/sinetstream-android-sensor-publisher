@@ -38,7 +38,6 @@ import androidx.recyclerview.widget.RecyclerView;
 
 import com.example.samplepublisher.net.SinetStreamWriterString;
 import com.example.samplepublisher.ui.main.ErrorDialogFragment;
-import com.example.samplepublisher.ui.main.InProgressDialogFragment;
 import com.example.samplepublisher.ui.main.MainFragment;
 import com.example.samplepublisher.ui.main.SendFragment;
 import com.example.samplepublisher.ui.main.SensorItemAdapter;
@@ -53,7 +52,6 @@ public class MainActivity extends AppCompatActivity implements
         MainFragment.OnFragmentInteractionListener,
         SendFragment.SendFragmentListener,
         SinetStreamWriterString.SinetStreamWriterStringListener,
-        InProgressDialogFragment.ProgressDialogListener,
         ErrorDialogFragment.ErrorDialogListener,
         SensorListener {
     private final String TAG = MainActivity.class.getSimpleName();
@@ -61,8 +59,8 @@ public class MainActivity extends AppCompatActivity implements
     private final int mSensorClientId = 1;
     private SensorController mSensorController = null;
     private ArrayList<Integer> mRunningSensorTypes = null;
-    private InProgressDialogFragment mInProgressDialogFragment = null;
 
+    private boolean mSensorsAvailable = false;
     private boolean mIsWriterAvailable = false;
 
     @Override
@@ -139,12 +137,7 @@ public class MainActivity extends AppCompatActivity implements
         SendFragment sendFragment = lookupSendFragment();
         if (sendFragment != null) {
             sendFragment.startWriter();
-
-            mInProgressDialogFragment =
-                    new InProgressDialogFragment(
-                            getString(R.string.dialog_title_connecting));
-            mInProgressDialogFragment.show(
-                    getSupportFragmentManager(), null);
+            toggleProgressBar(true);
         }
     }
 
@@ -336,10 +329,20 @@ public class MainActivity extends AppCompatActivity implements
             } else {
                 Log.w(TAG, "RecyclerView has gone?");
             }
-            mainFragment.showEmptyMessage(false);
+
+            mSensorsAvailable = true;
+            if (mIsWriterAvailable) {
+                mainFragment.showEmptyMessage(false);
+            } else {
+                Log.d(TAG, "Connection attempt is not yet finished");
+            }
         } else {
             Log.d(TAG, "No SensorTypes available");
-            mainFragment.showEmptyMessage(true);
+            if (mIsWriterAvailable) {
+                mainFragment.showEmptyMessage(true);
+            } else {
+                Log.d(TAG, "Connection attempt is not yet finished");
+            }
         }
     }
 
@@ -438,9 +441,14 @@ public class MainActivity extends AppCompatActivity implements
         Log.d(TAG, "onWriterStatus Changed: available=" + available);
         mIsWriterAvailable = available;
 
-        if (mInProgressDialogFragment != null) {
-            mInProgressDialogFragment.dismiss();
-            mInProgressDialogFragment = null;
+        if (available) {
+            /* Connection established */
+            toggleProgressBar(false);
+
+            MainFragment mainFragment = lookupMainFragment();
+            if (mainFragment != null) {
+                mainFragment.showEmptyMessage(!mSensorsAvailable);
+            }
         }
     }
 
@@ -466,6 +474,7 @@ public class MainActivity extends AppCompatActivity implements
         /* Implementation of SensorListener */
         Log.e(TAG, "onError: " + message);
 
+        toggleProgressBar(false);
         DialogUtil.showErrorDialog(
                 this, message, null, true);
     }
@@ -475,19 +484,17 @@ public class MainActivity extends AppCompatActivity implements
             @Nullable Parcelable parcelable, boolean isFatal) {
         /* Implementation of ErrorDialogFragment.ErrorDialogListener */
 
+        toggleProgressBar(false);
         if (isFatal) {
-            if (mInProgressDialogFragment != null) {
-                mInProgressDialogFragment.dismiss();
-                mInProgressDialogFragment = null;
-            }
             Log.i(TAG, "Going to finish myself...");
             finish();
         }
     }
 
-    @Override
-    public void onCanceled() {
-        /* Implementation of InProgressDialogFragment.ProgressDialogListener */
-        Log.d(TAG, "onCanceled");
+    private void toggleProgressBar(boolean enabled) {
+        MainFragment mainFragment = lookupMainFragment();
+        if (mainFragment != null) {
+            mainFragment.showProgressBar(enabled);
+        }
     }
 }

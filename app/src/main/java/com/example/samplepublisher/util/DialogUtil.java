@@ -6,6 +6,7 @@ import android.os.Bundle;
 import android.os.Parcelable;
 import android.text.Html;
 import android.text.method.LinkMovementMethod;
+import android.util.Log;
 import android.widget.TextView;
 
 import androidx.annotation.NonNull;
@@ -18,6 +19,8 @@ import com.example.samplepublisher.constants.BundleKeys;
 import com.example.samplepublisher.ui.main.ErrorDialogFragment;
 
 public class DialogUtil {
+    private final static String TAG = DialogUtil.class.getSimpleName();
+
     /**
      * Helper function to show an ErrorDialog.
      * Don't forget to implement the interface ErrorDialogFragment#ErrorDialogListener.
@@ -42,7 +45,20 @@ public class DialogUtil {
         }
         bundle.putBoolean(BundleKeys.BUNDLE_KEY_ERROR_FATAL, isFatal);
         edf.setArguments(bundle);
-        edf.show(activity.getSupportFragmentManager(), "ERROR");
+
+        /*
+         * Imagine a situation that the Sender/ReceiverFragment once called
+         * a connect request with invalid server address, and then the request
+         * has aborted in the middle of processing.
+         * In this case, "connection timer expired" error will be notified
+         * after some time later (say 30 seconds), but the corresponding
+         * Sender/ReceiverFragment might have gone.
+         */
+        try {
+            edf.show(activity.getSupportFragmentManager(), "ERROR");
+        } catch (IllegalStateException e) {
+            Log.e(TAG, "XXX: ErrorDialogFragment: " + e.getMessage());
+        }
     }
 
     public static void showSimpleDialog(
@@ -72,8 +88,10 @@ public class DialogUtil {
         alertDialog.show();
 
         if (isHtml) {
-            ((TextView) alertDialog.findViewById(android.R.id.message)).
-                    setMovementMethod(LinkMovementMethod.getInstance());
+            TextView tv = alertDialog.findViewById(android.R.id.message);
+            if (tv != null) {
+                tv.setMovementMethod(LinkMovementMethod.getInstance());
+            }
         }
     }
 }
