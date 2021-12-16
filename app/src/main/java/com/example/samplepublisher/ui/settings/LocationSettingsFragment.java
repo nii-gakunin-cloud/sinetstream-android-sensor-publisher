@@ -31,15 +31,12 @@ import androidx.preference.EditTextPreference;
 import androidx.preference.Preference;
 import androidx.preference.PreferenceFragmentCompat;
 import androidx.preference.PreferenceScreen;
+import androidx.preference.SwitchPreferenceCompat;
 
 import com.example.samplepublisher.R;
 import com.example.samplepublisher.util.DialogUtil;
 
-public class SensorSettingsFragment extends PreferenceFragmentCompat {
-    /* Markers to check if both longitude and latitude has set, or both unset */
-    private boolean mValidLongitude = false;
-    private boolean mValidLatitude = false;
-
+public class LocationSettingsFragment extends PreferenceFragmentCompat {
     /**
      * Called during {@link #onCreate(Bundle)} to supply the preferences for this fragment.
      * Subclasses are expected to call {@link #setPreferenceScreen(PreferenceScreen)} either
@@ -52,17 +49,20 @@ public class SensorSettingsFragment extends PreferenceFragmentCompat {
      */
     @Override
     public void onCreatePreferences(Bundle savedInstanceState, String rootKey) {
-        setPreferencesFromResource(R.xml.settings_sensors, rootKey);
-        EditTextPreference etp;
+        setPreferencesFromResource(R.xml.settings_location, rootKey);
 
-        etp = findPreference(getString(R.string.pref_key_sensor_interval_timer));
+        EditTextPreference etp;
+        etp = findPreference(getString(R.string.pref_key_location_latitude));
         if (etp != null) {
             etp.setOnBindEditTextListener(
                     new EditTextPreference.OnBindEditTextListener() {
                         @Override
                         public void onBindEditText(@NonNull EditText editText) {
-                            /* Limit input type to decimal numbers */
-                            editText.setInputType(InputType.TYPE_CLASS_NUMBER);
+                            /* Limit input type to SIGNED decimal numbers and a point */
+                            editText.setInputType(
+                                    InputType.TYPE_CLASS_NUMBER |
+                                            InputType.TYPE_NUMBER_FLAG_SIGNED |
+                                            InputType.TYPE_NUMBER_FLAG_DECIMAL);
                         }
                     }
             );
@@ -70,30 +70,25 @@ public class SensorSettingsFragment extends PreferenceFragmentCompat {
             etp.setOnPreferenceChangeListener(new Preference.OnPreferenceChangeListener() {
                 @Override
                 public boolean onPreferenceChange(Preference preference, Object newValue) {
+                    AppCompatActivity activity = (AppCompatActivity) getActivity();
                     String strval = (String) newValue;
-                    long seconds;
+                    double latitude;
 
                     if (strval.isEmpty()) {
                         return true; /* Reflect changes from non-empty to empty */
                     }
                     try {
-                        seconds = Long.parseLong(strval);
+                        latitude = Double.parseDouble(strval);
                     } catch (NumberFormatException e) {
-                        AppCompatActivity activity = (AppCompatActivity) getActivity();
                         DialogUtil.showErrorDialog(activity,
-                                "IntervalTimer: " + e.toString(),
+                                "Latitude: " + e.toString(),
                                 null, false);
                         return false;
                     }
 
-                    /*
-                     * SensorEvent.timestamp is set in nanoseconds.
-                     * To prevent overload, we handle interval timer in seconds.
-                     */
-                    if (seconds <= 0L || (Long.MAX_VALUE / 1000 * 1000) < seconds) {
-                        AppCompatActivity activity = (AppCompatActivity) getActivity();
+                    if (latitude < -90.0 || 90.0 < latitude) {
                         DialogUtil.showErrorDialog(activity,
-                                "IntervalTimer(" + seconds + ") out of range",
+                                "Latitude(" + latitude + ") out of range",
                                 null, false);
                         return false;
                     }
@@ -142,53 +137,6 @@ public class SensorSettingsFragment extends PreferenceFragmentCompat {
                                 null, false);
                         return false;
                     }
-                    mValidLongitude = true;
-                    return true;
-                }
-            });
-        }
-
-        etp = findPreference(getString(R.string.pref_key_location_latitude));
-        if (etp != null) {
-            etp.setOnBindEditTextListener(
-                    new EditTextPreference.OnBindEditTextListener() {
-                        @Override
-                        public void onBindEditText(@NonNull EditText editText) {
-                            /* Limit input type to SIGNED decimal numbers and a point */
-                            editText.setInputType(
-                                    InputType.TYPE_CLASS_NUMBER |
-                                            InputType.TYPE_NUMBER_FLAG_SIGNED |
-                                            InputType.TYPE_NUMBER_FLAG_DECIMAL);
-                        }
-                    }
-            );
-
-            etp.setOnPreferenceChangeListener(new Preference.OnPreferenceChangeListener() {
-                @Override
-                public boolean onPreferenceChange(Preference preference, Object newValue) {
-                    AppCompatActivity activity = (AppCompatActivity) getActivity();
-                    String strval = (String) newValue;
-                    double latitude;
-
-                    if (strval.isEmpty()) {
-                        return true; /* Reflect changes from non-empty to empty */
-                    }
-                    try {
-                        latitude = Double.parseDouble(strval);
-                    } catch (NumberFormatException e) {
-                        DialogUtil.showErrorDialog(activity,
-                                "Latitude: " + e.toString(),
-                                null, false);
-                        return false;
-                    }
-
-                    if (latitude < -90.0 || 90.0 < latitude) {
-                        DialogUtil.showErrorDialog(activity,
-                                "Latitude(" + latitude + ") out of range",
-                                null, false);
-                        return false;
-                    }
-                    mValidLatitude = true;
                     return true;
                 }
             });
@@ -197,12 +145,43 @@ public class SensorSettingsFragment extends PreferenceFragmentCompat {
 
     @Override
     public void onStop() {
-        if ((mValidLongitude && !mValidLatitude)
-                || (!mValidLongitude && mValidLatitude)) {
-            DialogUtil.showErrorDialog((AppCompatActivity) getActivity(),
-                    "Incomplete location {longitude, latitude} pair",
-                    null, false);
-        }
         super.onStop();
+
+        SwitchPreferenceCompat toggle_location =
+                findPreference(getString(R.string.pref_key_toggle_location));
+        SwitchPreferenceCompat auto_update =
+                findPreference(getString(R.string.pref_key_toggle_location_auto_update));
+        EditTextPreference location_latitude =
+                findPreference(getString(R.string.pref_key_location_latitude));
+        EditTextPreference location_longitude =
+                findPreference(getString(R.string.pref_key_location_longitude));
+
+        if (toggle_location == null || !toggle_location.isChecked()) {
+            /* Location is not used at all */
+            return;
+        }
+        if (auto_update != null && auto_update.isChecked()) {
+            /* Auto-update is used. The latitude and longitude pair is ignored */
+            return;
+        }
+
+        /* Fixed location case. The latitude and longitude pair must be set */
+        if (location_latitude != null) {
+            String probe = location_latitude.getText();
+            if (!(probe != null && !probe.isEmpty())) {
+                DialogUtil.showErrorDialog((AppCompatActivity) getActivity(),
+                        "Fixed location: latitude is missing",
+                        null, false);
+                return;
+            }
+        }
+        if (location_longitude != null) {
+            String probe = location_longitude.getText();
+            if (!(probe != null && !probe.isEmpty())) {
+                DialogUtil.showErrorDialog((AppCompatActivity) getActivity(),
+                        "Fixed location: longitude is missing",
+                        null, false);
+            }
+        }
     }
 }

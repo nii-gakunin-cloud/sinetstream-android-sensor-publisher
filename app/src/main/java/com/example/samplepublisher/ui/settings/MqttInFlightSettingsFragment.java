@@ -23,7 +23,6 @@ package com.example.samplepublisher.ui.settings;
 
 import android.os.Bundle;
 import android.text.InputType;
-import android.text.TextUtils;
 import android.widget.EditText;
 
 import androidx.annotation.NonNull;
@@ -36,7 +35,7 @@ import androidx.preference.PreferenceScreen;
 import com.example.samplepublisher.R;
 import com.example.samplepublisher.util.DialogUtil;
 
-public class BrokerSettingsFragment extends PreferenceFragmentCompat {
+public class MqttInFlightSettingsFragment extends PreferenceFragmentCompat {
     /**
      * Called during {@link #onCreate(Bundle)} to supply the preferences for this fragment.
      * Subclasses are expected to call {@link #setPreferenceScreen(PreferenceScreen)} either
@@ -49,32 +48,11 @@ public class BrokerSettingsFragment extends PreferenceFragmentCompat {
      */
     @Override
     public void onCreatePreferences(Bundle savedInstanceState, String rootKey) {
-        setPreferencesFromResource(R.xml.settings_brokers, rootKey);
+        setPreferencesFromResource(R.xml.settings_mqtt_inflight, rootKey);
 
         EditTextPreference etp;
         etp = getPreferenceManager().
-                findPreference(getString(R.string.pref_key_broker_network_address));
-        if (etp != null) {
-            etp.setSummaryProvider(new Preference.SummaryProvider<EditTextPreference>() {
-                /**
-                 * Called whenever {@link Preference#getSummary()} is called on this preference.
-                 *
-                 * @param preference This preference
-                 * @return A CharSequence that will be displayed as the summary for this preference
-                 */
-                @Override
-                public CharSequence provideSummary(EditTextPreference preference) {
-                    String text = preference.getText();
-                    if (TextUtils.isEmpty(text)){
-                        return getString(R.string.pref_summary_mandatory_notset);
-                    }
-                    return text;
-                }
-            });
-        }
-
-        etp = getPreferenceManager().
-                findPreference(getString(R.string.pref_key_broker_listen_port));
+                findPreference(getString(R.string.pref_key_mqtt_inflight_inflight));
         if (etp != null) {
             etp.setOnBindEditTextListener(new EditTextPreference.OnBindEditTextListener() {
                 @Override
@@ -84,45 +62,28 @@ public class BrokerSettingsFragment extends PreferenceFragmentCompat {
                 }
             });
 
-            etp.setSummaryProvider(new Preference.SummaryProvider<EditTextPreference>() {
-                /**
-                 * Called whenever {@link Preference#getSummary()} is called on this preference.
-                 *
-                 * @param preference This preference
-                 * @return A CharSequence that will be displayed as the summary for this preference
-                 */
-                @Override
-                public CharSequence provideSummary(EditTextPreference preference) {
-                    String text = preference.getText();
-                    if (TextUtils.isEmpty(text)){
-                        return getString(R.string.pref_summary_mandatory_notset);
-                    }
-                    return text;
-                }
-            });
-
             etp.setOnPreferenceChangeListener(new Preference.OnPreferenceChangeListener() {
                 @Override
                 public boolean onPreferenceChange(Preference preference, Object newValue) {
                     AppCompatActivity activity = (AppCompatActivity) getActivity();
                     String strval = (String) newValue;
-                    int port;
+                    int inflight;
 
                     if (strval.isEmpty()) {
                         return true; /* Reflect changes from non-empty to empty */
                     }
                     try {
-                        port = Integer.parseInt(strval);
+                        inflight = Integer.parseInt(strval);
                     } catch (NumberFormatException e) {
                         DialogUtil.showErrorDialog(activity,
-                                "Port Number: " + e.toString(),
+                                "InFlight: " + e.toString(),
                                 null, false);
                         return false;
                     }
 
-                    if ((port <= 0 || 0xffff < port)) {
+                    if (inflight < 0) {
                         DialogUtil.showErrorDialog(activity,
-                                "Port Number(" + port + ") out of range",
+                                "InFlight(" + inflight + ") out of range",
                                 null, false);
                         return false;
                     }

@@ -37,6 +37,7 @@
         <ListPreference
             app:key="@string/pref_key_crypto_algorithm"
             app:title="@string/pref_item_crypto_algorithm"
+            app:defaultValue="@string/pref_default_crypto_algorithm"
             app:useSimpleSummaryProvider="true"
             app:entries="@array/crypto_algorithms"
             app:entryValues="@array/crypto_algorithms"
@@ -79,6 +80,7 @@
         <ListPreference
             app:key="@string/pref_key_crypto_kdf_algorithm"
             app:title="@string/pref_item_crypto_kdf_algorithm"
+            app:defaultValue="@string/pref_default_crypto_kbf_algorithm"
             app:useSimpleSummaryProvider="true"
             app:entries="@array/crypto_key_derivation_algorithms"
             app:entryValues="@array/crypto_key_derivation_algorithms"
@@ -97,5 +99,15 @@
             app:title="@string/pref_item_crypto_kdf_iteration"
             app:defaultValue="1000"
             app:useSimpleSummaryProvider="true" />
+    </PreferenceCategory>
+
+    <PreferenceCategory
+        app:title="@string/pref_title_crypto_debug"
+        app:dependency="@string/pref_key_toggle_crypto">
+
+        <SwitchPreferenceCompat
+            app:defaultValue="false"
+            app:key="@string/pref_key_toggle_crypto_debug"
+            app:title="@string/pref_item_toggle_crypto_debug" />
     </PreferenceCategory>
 </PreferenceScreen>

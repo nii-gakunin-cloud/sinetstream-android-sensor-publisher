@@ -5,6 +5,12 @@
         <item name="colorPrimary">@color/colorPrimary</item>
         <item name="colorPrimaryDark">@color/colorPrimaryDark</item>
         <item name="colorAccent">@color/colorAccent</item>
+
+        <!--
+            Hmm, colorSurface item is required for a Material Theme.
+            https://material.io/blog/android-material-theme-color
+        -->
+        <item name="colorSurface">@color/design_default_color_surface</item>
     </style>
 
     <!--

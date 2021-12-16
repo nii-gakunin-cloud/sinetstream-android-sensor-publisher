@@ -20,10 +20,17 @@
   -->
 
 <resources>
+    <string-array name="location_providers">
+        <item>gps</item>
+        <item>fused</item>
+    </string-array>
+
+    <!--
     <string-array name="transport_protocols">
         <item>TCP</item>
         <item>WebSocket</item>
     </string-array>
+    -->
 
     <string-array name="transport_protocol_values">
         <item>tcp</item>
@@ -46,6 +53,19 @@
         <item>0</item>
         <item>1</item>
         <item>2</item>
+    </string-array>
+
+    <!--
+        SSLContext Algorithms
+        https://docs.oracle.com/en/java/javase/16/docs/specs/security/standard-names.html#sslcontext-algorithms
+    -->
+    <string-array name="sslcontext_algorithms">
+        <!-- In SINETStream environment, don't allow versions less than TLSv1.2.
+        <item>TLSv1</item>
+        <item>TLSv1.1</item>
+        -->
+        <item>TLSv1.2</item>
+        <item>TLSv1.3</item>
     </string-array>
 
     <string-array name="crypto_algorithms">

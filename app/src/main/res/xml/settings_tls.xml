@@ -29,6 +29,29 @@
             app:title="@string/pref_item_toggle_tls"
             app:defaultValue="false"/>
 
+        <ListPreference
+            app:key="@string/pref_key_tls_protocol"
+            app:title="@string/pref_item_tls_protocol"
+            app:useSimpleSummaryProvider="true"
+            app:entries="@array/sslcontext_algorithms"
+            app:entryValues="@array/sslcontext_algorithms"
+            app:dialogTitle="@string/pref_item_tls_protocol"
+            app:defaultValue="@string/pref_default_tls_protocol"
+            app:dependency="@string/pref_key_toggle_tls" />
+
+        <SwitchPreferenceCompat
+            app:key="@string/pref_key_tls_server_certs"
+            app:title="@string/pref_item_tls_server_certs"
+            app:defaultValue="false"
+            app:dependency="@string/pref_key_toggle_tls" />
+
+        <SwitchPreferenceCompat
+            app:key="@string/pref_key_tls_client_certs"
+            app:title="@string/pref_item_tls_client_certs"
+            app:defaultValue="false"
+            app:dependency="@string/pref_key_toggle_tls" />
+
+        <!-- OBSOLETED
         <EditTextPreference
             app:key="@string/pref_key_tls_ca_certs"
             app:title="@string/pref_item_tls_ca_certs"
@@ -46,6 +69,7 @@
             app:title="@string/pref_item_tls_keyfilePassword"
             app:useSimpleSummaryProvider="false"
             app:dependency="@string/pref_key_toggle_tls" />
+            -->
 
         <SwitchPreferenceCompat
             app:key="@string/pref_key_tls_check_hostname"

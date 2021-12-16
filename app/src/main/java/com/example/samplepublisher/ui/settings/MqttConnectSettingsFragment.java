@@ -35,11 +35,7 @@ import androidx.preference.PreferenceScreen;
 import com.example.samplepublisher.R;
 import com.example.samplepublisher.util.DialogUtil;
 
-public class SensorSettingsFragment extends PreferenceFragmentCompat {
-    /* Markers to check if both longitude and latitude has set, or both unset */
-    private boolean mValidLongitude = false;
-    private boolean mValidLatitude = false;
-
+public class MqttConnectSettingsFragment extends PreferenceFragmentCompat {
     /**
      * Called during {@link #onCreate(Bundle)} to supply the preferences for this fragment.
      * Subclasses are expected to call {@link #setPreferenceScreen(PreferenceScreen)} either
@@ -52,48 +48,45 @@ public class SensorSettingsFragment extends PreferenceFragmentCompat {
      */
     @Override
     public void onCreatePreferences(Bundle savedInstanceState, String rootKey) {
-        setPreferencesFromResource(R.xml.settings_sensors, rootKey);
-        EditTextPreference etp;
+        setPreferencesFromResource(R.xml.settings_mqtt_connect, rootKey);
 
-        etp = findPreference(getString(R.string.pref_key_sensor_interval_timer));
+        EditTextPreference etp;
+        etp = getPreferenceManager().
+                findPreference(getString(R.string.pref_key_mqtt_connect_keepalive));
         if (etp != null) {
-            etp.setOnBindEditTextListener(
-                    new EditTextPreference.OnBindEditTextListener() {
-                        @Override
-                        public void onBindEditText(@NonNull EditText editText) {
-                            /* Limit input type to decimal numbers */
-                            editText.setInputType(InputType.TYPE_CLASS_NUMBER);
-                        }
-                    }
-            );
+            etp.setOnBindEditTextListener(new EditTextPreference.OnBindEditTextListener() {
+                @Override
+                public void onBindEditText(@NonNull EditText editText) {
+                    editText.setInputType(
+                            InputType.TYPE_CLASS_NUMBER | InputType.TYPE_NUMBER_FLAG_DECIMAL);
+                }
+            });
 
             etp.setOnPreferenceChangeListener(new Preference.OnPreferenceChangeListener() {
                 @Override
                 public boolean onPreferenceChange(Preference preference, Object newValue) {
+                    AppCompatActivity activity = (AppCompatActivity) getActivity();
                     String strval = (String) newValue;
-                    long seconds;
+                    int seconds;
 
                     if (strval.isEmpty()) {
                         return true; /* Reflect changes from non-empty to empty */
                     }
                     try {
-                        seconds = Long.parseLong(strval);
+                        seconds = Integer.parseInt(strval);
                     } catch (NumberFormatException e) {
-                        AppCompatActivity activity = (AppCompatActivity) getActivity();
                         DialogUtil.showErrorDialog(activity,
-                                "IntervalTimer: " + e.toString(),
+                                "KeepAliveInterval: " + e.toString(),
                                 null, false);
                         return false;
                     }
 
                     /*
-                     * SensorEvent.timestamp is set in nanoseconds.
-                     * To prevent overload, we handle interval timer in seconds.
+                     * A value of 0 disables keepalive processing in the client.
                      */
-                    if (seconds <= 0L || (Long.MAX_VALUE / 1000 * 1000) < seconds) {
-                        AppCompatActivity activity = (AppCompatActivity) getActivity();
+                    if (seconds < 0) {
                         DialogUtil.showErrorDialog(activity,
-                                "IntervalTimer(" + seconds + ") out of range",
+                                "KeepAliveInterval(" + seconds + ") out of range",
                                 null, false);
                         return false;
                     }
@@ -102,107 +95,93 @@ public class SensorSettingsFragment extends PreferenceFragmentCompat {
             });
         }
 
-        etp = findPreference(getString(R.string.pref_key_location_longitude));
+        etp = getPreferenceManager().
+                findPreference(getString(R.string.pref_key_mqtt_connect_connection_timeout));
         if (etp != null) {
-            etp.setOnBindEditTextListener(
-                    new EditTextPreference.OnBindEditTextListener() {
-                        @Override
-                        public void onBindEditText(@NonNull EditText editText) {
-                            /* Limit input type to SIGNED decimal numbers and a point */
-                            editText.setInputType(
-                                    InputType.TYPE_CLASS_NUMBER |
-                                            InputType.TYPE_NUMBER_FLAG_SIGNED |
-                                            InputType.TYPE_NUMBER_FLAG_DECIMAL);
-                        }
-                    }
-            );
+            etp.setOnBindEditTextListener(new EditTextPreference.OnBindEditTextListener() {
+                @Override
+                public void onBindEditText(@NonNull EditText editText) {
+                    editText.setInputType(
+                            InputType.TYPE_CLASS_NUMBER | InputType.TYPE_NUMBER_FLAG_DECIMAL);
+                }
+            });
 
             etp.setOnPreferenceChangeListener(new Preference.OnPreferenceChangeListener() {
                 @Override
                 public boolean onPreferenceChange(Preference preference, Object newValue) {
                     AppCompatActivity activity = (AppCompatActivity) getActivity();
                     String strval = (String) newValue;
-                    double longitude;
+                    int seconds;
 
                     if (strval.isEmpty()) {
                         return true; /* Reflect changes from non-empty to empty */
                     }
                     try {
-                        longitude = Double.parseDouble(strval);
+                        seconds = Integer.parseInt(strval);
                     } catch (NumberFormatException e) {
                         DialogUtil.showErrorDialog(activity,
-                                "Longitude: " + e.toString(),
+                                "ConnectionTimeOut: " + e.toString(),
                                 null, false);
                         return false;
                     }
 
-                    if ((longitude < -180.0 || 180.0 < longitude)) {
+                    /*
+                     * A value of 0 disables timeout processing meaning the client
+                     * will wait until the network connection is made successfully or fails.
+                     */
+                    if (seconds < 0) {
                         DialogUtil.showErrorDialog(activity,
-                                "Longitude(" + longitude + ") out of range",
+                                "ConnectionTimeout(" + seconds + ") out of range",
                                 null, false);
                         return false;
                     }
-                    mValidLongitude = true;
                     return true;
                 }
             });
         }
 
-        etp = findPreference(getString(R.string.pref_key_location_latitude));
+        etp = getPreferenceManager().
+                findPreference(getString(R.string.pref_key_mqtt_reconnect_max_delay));
         if (etp != null) {
-            etp.setOnBindEditTextListener(
-                    new EditTextPreference.OnBindEditTextListener() {
-                        @Override
-                        public void onBindEditText(@NonNull EditText editText) {
-                            /* Limit input type to SIGNED decimal numbers and a point */
-                            editText.setInputType(
-                                    InputType.TYPE_CLASS_NUMBER |
-                                            InputType.TYPE_NUMBER_FLAG_SIGNED |
-                                            InputType.TYPE_NUMBER_FLAG_DECIMAL);
-                        }
-                    }
-            );
+            etp.setOnBindEditTextListener(new EditTextPreference.OnBindEditTextListener() {
+                @Override
+                public void onBindEditText(@NonNull EditText editText) {
+                    editText.setInputType(
+                            InputType.TYPE_CLASS_NUMBER | InputType.TYPE_NUMBER_FLAG_DECIMAL);
+                }
+            });
 
             etp.setOnPreferenceChangeListener(new Preference.OnPreferenceChangeListener() {
                 @Override
                 public boolean onPreferenceChange(Preference preference, Object newValue) {
                     AppCompatActivity activity = (AppCompatActivity) getActivity();
                     String strval = (String) newValue;
-                    double latitude;
+                    int milliseconds;
 
                     if (strval.isEmpty()) {
                         return true; /* Reflect changes from non-empty to empty */
                     }
                     try {
-                        latitude = Double.parseDouble(strval);
+                        milliseconds = Integer.parseInt(strval);
                     } catch (NumberFormatException e) {
                         DialogUtil.showErrorDialog(activity,
-                                "Latitude: " + e.toString(),
+                                "MaxReconnectDelay: " + e.toString(),
                                 null, false);
                         return false;
                     }
 
-                    if (latitude < -90.0 || 90.0 < latitude) {
+                    /*
+                     * Non-zero value overrides the default upper limit 128000.
+                     */
+                    if ((milliseconds != 0) && (milliseconds < 1000)) {
                         DialogUtil.showErrorDialog(activity,
-                                "Latitude(" + latitude + ") out of range",
+                                "MaxReconnectDelay(" + milliseconds + ") out of range",
                                 null, false);
                         return false;
                     }
-                    mValidLatitude = true;
                     return true;
                 }
             });
         }
-    }
-
-    @Override
-    public void onStop() {
-        if ((mValidLongitude && !mValidLatitude)
-                || (!mValidLongitude && mValidLatitude)) {
-            DialogUtil.showErrorDialog((AppCompatActivity) getActivity(),
-                    "Incomplete location {longitude, latitude} pair",
-                    null, false);
-        }
-        super.onStop();
     }
 }

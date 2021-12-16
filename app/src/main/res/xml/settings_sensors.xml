@@ -45,14 +45,9 @@
 
     <!-- Location -->
     <PreferenceCategory app:title="@string/pref_title_location">
-        <EditTextPreference
-            app:key="@string/pref_key_location_longitude"
-            app:title="@string/pref_item_location_longitude"
-            app:useSimpleSummaryProvider="true" />
-
-        <EditTextPreference
-            app:key="@string/pref_key_location_latitude"
-            app:title="@string/pref_item_location_latitude"
-            app:useSimpleSummaryProvider="true" />
+        <Preference
+            app:fragment="com.example.samplepublisher.ui.settings.LocationSettingsFragment"
+            app:summary="@string/pref_summary_location"
+            app:title="@string/pref_title_location" />
     </PreferenceCategory>
 </PreferenceScreen>

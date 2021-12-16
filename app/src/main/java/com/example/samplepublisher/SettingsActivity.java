@@ -21,6 +21,8 @@
 
 package com.example.samplepublisher;
 
+import android.app.Activity;
+import android.content.Intent;
 import android.content.SharedPreferences;
 import android.os.Build;
 import android.os.Bundle;
@@ -37,6 +39,7 @@ import androidx.preference.Preference;
 import androidx.preference.PreferenceFragmentCompat;
 import androidx.preference.PreferenceManager;
 
+import com.example.samplepublisher.constants.ActivityCodes;
 import com.example.samplepublisher.ui.main.ErrorDialogFragment;
 import com.example.samplepublisher.ui.settings.RootSettingsFragment;
 import com.example.samplepublisher.ui.settings.Xml2Yaml;
@@ -174,5 +177,34 @@ public class SettingsActivity extends AppCompatActivity implements
     public void onErrorDialogDismissed(
             @Nullable Parcelable parcelable, boolean isFatal) {
         /* Do nothing here */
+    }
+
+    /**
+     * Called when the activity has detected the user's press of the back
+     * key. The {@link #getOnBackPressedDispatcher() OnBackPressedDispatcher} will be given a
+     * chance to handle the back button before the default behavior of
+     * {@link Activity#onBackPressed()} is invoked.
+     *
+     * @see #getOnBackPressedDispatcher()
+     */
+    @Override
+    public void onBackPressed() {
+        /*
+         * It turns out that simply calling "setResult() and finish()"
+         * does not work as expected; we want the control flow to backtrack
+         * the settings hierarchy, instead of jumping back to the top.
+         */
+        super.onBackPressed();
+//        /*
+//         * It seems strange, but calling super.onBackPressed() seems to
+//         * nullify the setResult() effect.
+//         *
+//        super.onBackPressed();
+//         */
+//        Log.i(TAG, "Going to finish myself...");
+//        Intent intent = new Intent();
+//        intent.putExtra(ActivityCodes.KEY, ActivityCodes.ACTIVITY_CODE_SETTINGS);
+//        setResult(Activity.RESULT_OK, intent);
+//        finish();
     }
 }

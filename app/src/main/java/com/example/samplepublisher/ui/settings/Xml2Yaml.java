@@ -171,11 +171,10 @@ public class Xml2Yaml {
 
     private void setMqtt(@NonNull Map<String, Object> serviceInfo) {
         final String[] strValKeys = {
-                mContext.getString(R.string.pref_key_mqtt_protocol),
+                mContext.getString(R.string.pref_key_mqtt_mqtt_version),
                 mContext.getString(R.string.pref_key_mqtt_transport),
         };
         final String[] intValKeys = {
-                mContext.getString(R.string.pref_key_mqtt_max_inflight_messages_set_inflight),
                 mContext.getString(R.string.pref_key_mqtt_qos),
         };
         final String[] boolValKeys = {
@@ -221,6 +220,8 @@ public class Xml2Yaml {
         }
 
         setMqttConnect(serviceInfo);
+        setMqttInFlight(serviceInfo);
+        setMqttDebug(serviceInfo);
     }
 
     private void setMqttConnect(@NonNull Map<String, Object> serviceInfo) {
@@ -260,11 +261,111 @@ public class Xml2Yaml {
                 return;
             }
             map.put(key.substring(offset), boolval);
+
+            if (key.equals(mContext.getString(
+                    R.string.pref_key_mqtt_connect_automatic_reconnect))) {
+                if (boolval) {
+                    setMqttReconnect(serviceInfo);
+                }
+            }
         }
 
         if (map.size() > 0) {
             serviceInfo.put("connect", map);
         }
+    }
+
+    private void setMqttReconnect(@NonNull Map<String, Object> serviceInfo) {
+        Map<String, Object> map = new TreeMap<>();
+        final String[] intValKeys = {
+                mContext.getString(R.string.pref_key_mqtt_reconnect_max_delay),
+        };
+        String strval, key;
+        int intval;
+        final int offset = "mqtt_reconnect_".length();
+
+        for (String intValKey : intValKeys) {
+            key = intValKey;
+            strval = mSharedPreferences.getString(key, null);
+            if (strval != null && !strval.isEmpty()) {
+                try {
+                    intval = Integer.parseInt(strval);
+                } catch (NumberFormatException e) {
+                    Log.w(TAG, key.substring(offset) + "(" + strval + "):" + e.getMessage());
+                    return;
+                }
+                if (intval > 0) {
+                    map.put(key.substring(offset), intval);
+                }
+                break;
+            }
+        }
+
+        if (map.size() > 0) {
+            serviceInfo.put("reconnect_delay_set", map);
+        }
+    }
+
+    private void setMqttInFlight(@NonNull Map<String, Object> serviceInfo) {
+        Map<String, Object> map = new TreeMap<>();
+        final String[] intValKeys = {
+                mContext.getString(R.string.pref_key_mqtt_inflight_inflight),
+        };
+        final String[] boolValKeys = {
+                mContext.getString(R.string.pref_key_toggle_mqtt_inflight),
+        };
+        String strval, key;
+        int intval;
+        boolean boolval;
+        final int offset = "mqtt_inflight_".length();
+
+        for (String boolValKey : boolValKeys) {
+            key = boolValKey;
+            try {
+                boolval = mSharedPreferences.getBoolean(key, false);
+            } catch (ClassCastException e) {
+                Log.w(TAG, key.substring(offset) + ":" + e.getMessage());
+                return;
+            }
+            if (!boolval) {
+                /* Not set, skip this category */
+                return;
+            }
+            break;
+        }
+
+        for (String intValKey : intValKeys) {
+            key = intValKey;
+            strval = mSharedPreferences.getString(key, null);
+            if (strval != null && !strval.isEmpty()) {
+                try {
+                    intval = Integer.parseInt(strval);
+                } catch (NumberFormatException e) {
+                    Log.w(TAG, key.substring(offset) + "(" + strval + "):" + e.getMessage());
+                    return;
+                }
+                map.put(key.substring(offset), intval);
+                break;
+            }
+        }
+
+        if (map.size() > 0) {
+            key = boolValKeys[0];
+            serviceInfo.put(key.substring(offset), map);
+        }
+    }
+
+    private void setMqttDebug(@NonNull Map<String, Object> serviceInfo) {
+        String key = mContext.getString(R.string.pref_key_toggle_mqtt_debug);
+        boolean enableMqttDebug;
+        final int offset = "mqtt_debug_".length();
+        try {
+            enableMqttDebug = mSharedPreferences.getBoolean(key, false);
+        } catch (ClassCastException e) {
+            Log.w(TAG, key + ":" + e.getMessage());
+            return;
+        }
+        serviceInfo.put(key.substring(offset), enableMqttDebug);
     }
 
     private void setUserAuth(@NonNull Map<String, Object> serviceInfo) {
@@ -313,14 +414,19 @@ public class Xml2Yaml {
         if (enableTls) {
             Map<String, Object> map = new TreeMap<>();
             final String[] strValKeys = {
+                    mContext.getString(R.string.pref_key_tls_protocol),
+                    /* OBSOLETED
                     mContext.getString(R.string.pref_key_tls_ca_certs),
                     mContext.getString(R.string.pref_key_tls_certfile),
                     mContext.getString(R.string.pref_key_tls_keyfilePassword),
-            };
-            final String[] boolValKeys = {
-                    mContext.getString(R.string.pref_key_tls_check_hostname),
+                     */
             };
             String strval;
+            final String[] boolValKeys = {
+                    mContext.getString(R.string.pref_key_tls_server_certs),
+                    mContext.getString(R.string.pref_key_tls_client_certs),
+                    mContext.getString(R.string.pref_key_tls_check_hostname),
+            };
             boolean boolval;
             final int offset = "tls_".length();
 
@@ -454,5 +560,18 @@ public class Xml2Yaml {
         if (map.size() > 0) {
             crypto.put("key_derivation", map);
         }
+    }
+
+    private void setCryptoDebug(@NonNull Map<String, Object> serviceInfo) {
+        String key = mContext.getString(R.string.pref_key_toggle_crypto_debug);
+        boolean enableMqttDebug;
+        final int offset = "crypto_debug_".length();
+        try {
+            enableMqttDebug = mSharedPreferences.getBoolean(key, false);
+        } catch (ClassCastException e) {
+            Log.w(TAG, key + ":" + e.getMessage());
+            return;
+        }
+        serviceInfo.put(key.substring(offset), enableMqttDebug);
     }
 }

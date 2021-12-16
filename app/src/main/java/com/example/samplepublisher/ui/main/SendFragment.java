@@ -14,7 +14,8 @@ import androidx.fragment.app.Fragment;
 
 import com.example.samplepublisher.R;
 import com.example.samplepublisher.constants.BundleKeys;
-import com.example.samplepublisher.net.SinetStreamWriterString;
+
+import jp.ad.sinet.stream.android.api.SinetStreamWriterString;
 
 /**
  * A simple {@link Fragment} subclass.
@@ -193,9 +194,9 @@ public class SendFragment extends Fragment {
         super.onStop();
     }
 
-    public void startWriter() {
+    public void startWriter(@Nullable String alias) {
         if (mSinetStreamWriter != null) {
-            mSinetStreamWriter.initialize(mServiceName);
+            mSinetStreamWriter.initialize(mServiceName, alias);
         }
     }
 

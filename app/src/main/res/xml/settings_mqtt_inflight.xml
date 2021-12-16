@@ -20,30 +20,23 @@
   ~  under the License.
   -->
 
-<PreferenceScreen xmlns:app="http://schemas.android.com/apk/res-auto">
+<PreferenceScreen xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto">
+
     <PreferenceCategory
-        app:title="@string/pref_title_brokers">
+        app:title="@string/pref_title_mqtt_inflight">
+
+        <SwitchPreferenceCompat
+            app:key="@string/pref_key_toggle_mqtt_inflight"
+            app:title="@string/pref_item_toggle_mqtt_inflight"
+            app:defaultValue="false"/>
 
         <EditTextPreference
-            app:key="@string/pref_key_broker_network_address"
-            app:title="@string/pref_item_broker_network_address"
-            app:useSimpleSummaryProvider="true"
-            app:dialogTitle="@string/pref_item_broker_network_address"/>
-
-        <EditTextPreference
-            app:dialogTitle="@string/pref_item_broker_listen_port"
-            app:key="@string/pref_key_broker_listen_port"
-            app:title="@string/pref_item_broker_listen_port"
-            app:defaultValue="1883"
-            app:useSimpleSummaryProvider="true" />
-
-        <ListPreference
-            app:defaultValue="@string/pref_default_mqtt_transport"
-            app:dialogTitle="@string/pref_item_mqtt_transport"
-            app:entries="@array/transport_protocol_values"
-            app:entryValues="@array/transport_protocol_values"
-            app:key="@string/pref_key_mqtt_transport"
-            app:title="@string/pref_item_mqtt_transport"
+            app:defaultValue="10"
+            app:dependency="@string/pref_key_toggle_mqtt_inflight"
+            app:dialogTitle="@string/pref_item_mqtt_inflight_inflight"
+            app:key="@string/pref_key_mqtt_inflight_inflight"
+            app:title="@string/pref_item_mqtt_inflight_inflight"
             app:useSimpleSummaryProvider="true" />
     </PreferenceCategory>
 </PreferenceScreen>

@@ -1,0 +1,62 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+  ~ Copyright (c) 2021 National Institute of Informatics
+  ~
+  ~  Licensed to the Apache Software Foundation (ASF) under one
+  ~  or more contributor license agreements.  See the NOTICE file
+  ~  distributed with this work for additional information
+  ~  regarding copyright ownership.  The ASF licenses this file
+  ~  to you under the Apache License, Version 2.0 (the
+  ~  "License"); you may not use this file except in compliance
+  ~  with the License.  You may obtain a copy of the License at
+  ~
+  ~    http://www.apache.org/licenses/LICENSE-2.0
+  ~
+  ~  Unless required by applicable law or agreed to in writing,
+  ~  software distributed under the License is distributed on an
+  ~  "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+  ~  KIND, either express or implied.  See the License for the
+  ~  specific language governing permissions and limitations
+  ~  under the License.
+  -->
+
+<PreferenceScreen xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto">
+    <PreferenceCategory
+        app:title="@string/pref_title_mqtt_protocol">
+
+        <ListPreference
+            app:key="@string/pref_key_mqtt_mqtt_version"
+            app:title="@string/pref_item_mqtt_mqtt_version"
+            app:useSimpleSummaryProvider="true"
+            app:entries="@array/mqtt_versions"
+            app:entryValues="@array/mqtt_versions"
+            app:dialogTitle="@string/pref_item_mqtt_mqtt_version"
+            app:defaultValue="@string/pref_default_mqtt_version"/>
+
+        <ListPreference
+            app:key="@string/pref_key_mqtt_qos"
+            app:title="@string/pref_item_mqtt_qos"
+            app:useSimpleSummaryProvider="true"
+            app:entries="@array/mqtt_qos_types"
+            app:entryValues="@array/mqtt_qos_type_values"
+            app:dialogTitle="@string/pref_item_mqtt_qos"
+            app:defaultValue="@string/pref_default_mqtt_qos"/>
+
+        <SwitchPreferenceCompat
+            app:key="@string/pref_key_mqtt_retain"
+            app:title="@string/pref_item_mqtt_retain"
+            app:defaultValue="true"/>
+
+        <SwitchPreferenceCompat
+            app:key="@string/pref_key_mqtt_clean_session"
+            app:title="@string/pref_item_mqtt_clean_session"
+            app:defaultValue="true"/>
+
+        <Preference
+            app:allowDividerAbove="true"
+            app:fragment="com.example.samplepublisher.ui.settings.MqttInFlightSettingsFragment"
+            app:summary="@string/pref_summary_mqtt_inflight"
+            app:title="@string/pref_title_mqtt_inflight" />
+    </PreferenceCategory>
+</PreferenceScreen>

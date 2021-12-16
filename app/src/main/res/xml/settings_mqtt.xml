@@ -24,46 +24,22 @@
     <PreferenceCategory
         app:title="@string/pref_title_mqtt">
 
-        <ListPreference
-            app:key="@string/pref_key_mqtt_protocol"
-            app:title="@string/pref_item_mqtt_protocol"
-            app:useSimpleSummaryProvider="true"
-            app:entries="@array/mqtt_versions"
-            app:entryValues="@array/mqtt_versions"
-            app:dialogTitle="@string/pref_item_mqtt_protocol"
-            app:defaultValue="@string/pref_default_mqtt_protocol"/>
+        <Preference
+            app:allowDividerAbove="false"
+            app:fragment="com.example.samplepublisher.ui.settings.MqttProtocolSettingsFragment"
+            app:summary="@string/pref_summary_mqtt_protocol"
+            app:title="@string/pref_title_mqtt_protocol" />
 
-        <ListPreference
-            app:key="@string/pref_key_mqtt_qos"
-            app:title="@string/pref_item_mqtt_qos"
-            app:useSimpleSummaryProvider="true"
-            app:entries="@array/mqtt_qos_types"
-            app:entryValues="@array/mqtt_qos_type_values"
-            app:dialogTitle="@string/pref_item_mqtt_qos"
-            app:defaultValue="@string/pref_default_mqtt_qos"/>
+        <Preference
+            app:allowDividerAbove="true"
+            app:fragment="com.example.samplepublisher.ui.settings.MqttConnectSettingsFragment"
+            app:summary="@string/pref_summary_mqtt_connect"
+            app:title="@string/pref_title_mqtt_connect" />
 
         <SwitchPreferenceCompat
-            app:key="@string/pref_key_mqtt_retain"
-            app:title="@string/pref_item_mqtt_retain"
-            app:defaultValue="true"/>
-
-        <EditTextPreference
-            app:dialogTitle="@string/pref_item_mqtt_connect_keepalive"
-            app:key="@string/pref_key_mqtt_connect_keepalive"
-            app:title="@string/pref_item_mqtt_connect_keepalive"
-            app:defaultValue="60"
-            app:useSimpleSummaryProvider="true" />
-
-        <SwitchPreferenceCompat
-            app:key="@string/pref_key_mqtt_clean_session"
-            app:title="@string/pref_item_mqtt_clean_session"
-            app:defaultValue="true"/>
-
-        <EditTextPreference
-            app:dialogTitle="@string/pref_item_mqtt_connect_connection_timeout"
-            app:key="@string/pref_key_mqtt_connect_connection_timeout"
-            app:title="@string/pref_item_mqtt_connect_connection_timeout"
-            app:defaultValue="30"
-            app:useSimpleSummaryProvider="true" />
+            app:allowDividerAbove="true"
+            app:defaultValue="false"
+            app:key="@string/pref_key_toggle_mqtt_debug"
+            app:title="@string/pref_item_toggle_mqtt_debug" />
     </PreferenceCategory>
 </PreferenceScreen>

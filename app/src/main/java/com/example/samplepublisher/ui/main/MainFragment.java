@@ -8,7 +8,6 @@ import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
 import android.widget.CompoundButton;
-import android.widget.FrameLayout;
 import android.widget.ImageButton;
 import android.widget.LinearLayout;
 import android.widget.TextView;
@@ -18,11 +17,14 @@ import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 import androidx.constraintlayout.widget.ConstraintLayout;
 import androidx.fragment.app.Fragment;
+import androidx.lifecycle.Lifecycle;
+import androidx.lifecycle.LifecycleObserver;
 import androidx.recyclerview.widget.LinearLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
 
 import com.example.samplepublisher.MainActivity;
 import com.example.samplepublisher.R;
+import com.example.samplepublisher.constants.BundleKeys;
 import com.example.samplepublisher.models.SensorItem;
 import com.example.samplepublisher.util.DateTimeUtil;
 
@@ -42,6 +44,7 @@ public class MainFragment extends Fragment {
     //private SensorViewModel mViewModel;
     private long mSentCount = 0L;
     private final DateTimeUtil mDateTimeUtil = new DateTimeUtil();
+    private String mLocationProvider = null;
 
     /**
      * Mandatory empty constructor for the fragment manager to instantiate the
@@ -81,6 +84,43 @@ public class MainFragment extends Fragment {
         super.onDetach();
     }
 
+    /**
+     * Called to do initial creation of a fragment.  This is called after
+     * {@link #onAttach(Activity)} and before
+     * {@link #onCreateView(LayoutInflater, ViewGroup, Bundle)}.
+     *
+     * <p>Note that this can be called while the fragment's activity is
+     * still in the process of being created.  As such, you can not rely
+     * on things like the activity's content view hierarchy being initialized
+     * at this point.  If you want to do work once the activity itself is
+     * created, add a {@link LifecycleObserver} on the
+     * activity's Lifecycle, removing it when it receives the
+     * {@link Lifecycle.State#CREATED} callback.
+     *
+     * <p>Any restored child fragments will be created before the base
+     * <code>Fragment.onCreate</code> method returns.</p>
+     *
+     * @param savedInstanceState If the fragment is being re-created from
+     *                           a previous saved state, this is the state.
+     */
+    @Override
+    public void onCreate(@Nullable Bundle savedInstanceState) {
+        super.onCreate(savedInstanceState);
+
+        /*
+         * Here we assume that calling Activity will provide the
+         * service name for this MQTT session.
+         */
+        Bundle bundle = getArguments();
+        if (bundle != null) {
+            String locationProvider =
+                    bundle.getString(BundleKeys.BUNDLE_KEY_LOCATION_PROVIDER);
+            if (locationProvider != null) {
+                mLocationProvider = locationProvider;
+            }
+        }
+    }
+
     @Nullable
     @Override
     public View onCreateView(@NonNull LayoutInflater inflater, @Nullable ViewGroup container,
@@ -101,19 +141,47 @@ public class MainFragment extends Fragment {
             Log.e(TAG, "RecyclerView not found?");
         }
 
+        ConstraintLayout locationPanel = rootView.findViewById(R.id.locationPanel);
+        if (mLocationProvider != null) {
+            /* Show location panel */
+            if (locationPanel != null) {
+                locationPanel.setVisibility(View.VISIBLE);
+            }
+
+            TextView tv;
+            tv= rootView.findViewById(R.id.location_provider);
+            if (tv != null) {
+                tv.setText(mLocationProvider);
+            }
+
+            tv = rootView.findViewById(R.id.location_value);
+            if (tv != null) {
+                tv.setText("N/A");
+            }
+        } else {
+            /* Hide location panel */
+            if (locationPanel != null) {
+                locationPanel.setVisibility(View.GONE);
+            }
+        }
+
         ToggleButton toggleButton = rootView.findViewById(R.id.toggleButton);
         if (toggleButton != null) {
             toggleButton.setOnCheckedChangeListener(
                     new CompoundButton.OnCheckedChangeListener() {
-                @Override
-                public void onCheckedChanged(CompoundButton compoundButton, boolean isChecked) {
-                    Log.d(TAG, "onCheckedChanged: " + isChecked);
+                        @Override
+                        public void onCheckedChanged(CompoundButton compoundButton, boolean isChecked) {
+                            Log.d(TAG, "onCheckedChanged: " + isChecked);
 
-                    /* If isChecked is true, call SensorManager for selected types */
-                    mListener.onEnableSensors(isChecked);
-                    enableResetButton(!isChecked);
-                }
-            });
+                            /* If isChecked is true, call SensorManager for selected types */
+                            if (isChecked) {
+                                mListener.onEnableSensors(); /* RUN */
+                            } else {
+                                mListener.onDisableSensors(); /* STOP */
+                            }
+                            enableResetButton(!isChecked);
+                        }
+                    });
         } else {
             Log.e(TAG, "ToggleButton not found?");
         }
@@ -203,6 +271,26 @@ public class MainFragment extends Fragment {
         }
     }
 
+    public void updateLocationProviders(@NonNull String providers) {
+        Activity activity = getActivity();
+        if (activity instanceof MainActivity) {
+            TextView tv = activity.findViewById(R.id.location_provider);
+            if (tv != null) {
+                tv.setText(providers);
+            }
+        }
+    }
+
+    public void updateLocationValue(@NonNull String locationValue) {
+        Activity activity = getActivity();
+        if (activity instanceof MainActivity) {
+            TextView tvLocation = activity.findViewById(R.id.location_value);
+            if (tvLocation != null) {
+                tvLocation.setText(locationValue);
+            }
+        }
+    }
+
     private void updateStatistics() {
         Activity activity = getActivity();
         if (activity instanceof MainActivity) {
@@ -252,8 +340,10 @@ public class MainFragment extends Fragment {
     public interface OnFragmentInteractionListener {
         void onSensorTypesChecked(boolean checked);
 
-        void onEnableSensors(boolean enable);
+        void onEnableSensors();
 
-        void onError(String message);
+        void onDisableSensors();
+
+        void onError(@NonNull String message);
     }
 }
