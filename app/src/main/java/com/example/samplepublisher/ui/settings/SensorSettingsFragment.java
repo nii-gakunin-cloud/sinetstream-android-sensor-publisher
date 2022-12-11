@@ -69,7 +69,7 @@ public class SensorSettingsFragment extends PreferenceFragmentCompat {
 
             etp.setOnPreferenceChangeListener(new Preference.OnPreferenceChangeListener() {
                 @Override
-                public boolean onPreferenceChange(Preference preference, Object newValue) {
+                public boolean onPreferenceChange(@NonNull Preference preference, Object newValue) {
                     String strval = (String) newValue;
                     long seconds;
 
@@ -81,7 +81,7 @@ public class SensorSettingsFragment extends PreferenceFragmentCompat {
                     } catch (NumberFormatException e) {
                         AppCompatActivity activity = (AppCompatActivity) getActivity();
                         DialogUtil.showErrorDialog(activity,
-                                "IntervalTimer: " + e.toString(),
+                                "IntervalTimer: " + e,
                                 null, false);
                         return false;
                     }
@@ -119,7 +119,7 @@ public class SensorSettingsFragment extends PreferenceFragmentCompat {
 
             etp.setOnPreferenceChangeListener(new Preference.OnPreferenceChangeListener() {
                 @Override
-                public boolean onPreferenceChange(Preference preference, Object newValue) {
+                public boolean onPreferenceChange(@NonNull Preference preference, Object newValue) {
                     AppCompatActivity activity = (AppCompatActivity) getActivity();
                     String strval = (String) newValue;
                     double longitude;
@@ -131,7 +131,7 @@ public class SensorSettingsFragment extends PreferenceFragmentCompat {
                         longitude = Double.parseDouble(strval);
                     } catch (NumberFormatException e) {
                         DialogUtil.showErrorDialog(activity,
-                                "Longitude: " + e.toString(),
+                                "Longitude: " + e,
                                 null, false);
                         return false;
                     }
@@ -165,7 +165,7 @@ public class SensorSettingsFragment extends PreferenceFragmentCompat {
 
             etp.setOnPreferenceChangeListener(new Preference.OnPreferenceChangeListener() {
                 @Override
-                public boolean onPreferenceChange(Preference preference, Object newValue) {
+                public boolean onPreferenceChange(@NonNull Preference preference, Object newValue) {
                     AppCompatActivity activity = (AppCompatActivity) getActivity();
                     String strval = (String) newValue;
                     double latitude;
@@ -177,7 +177,7 @@ public class SensorSettingsFragment extends PreferenceFragmentCompat {
                         latitude = Double.parseDouble(strval);
                     } catch (NumberFormatException e) {
                         DialogUtil.showErrorDialog(activity,
-                                "Latitude: " + e.toString(),
+                                "Latitude: " + e,
                                 null, false);
                         return false;
                     }

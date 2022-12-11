@@ -9,6 +9,18 @@
     android:orientation="vertical">
 
     <include
+        layout="@layout/cellular_panel"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="4dp"
+        android:layout_marginStart="4dp"
+        android:layout_marginEnd="4dp"
+        app:layout_constraintBottom_toTopOf="@+id/locationBar"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toTopOf="parent" />
+
+    <include
         layout="@layout/location_panel"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
@@ -18,7 +30,7 @@
         app:layout_constraintBottom_toTopOf="@+id/statsBar"
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintTop_toTopOf="parent" />
+        app:layout_constraintTop_toBottomOf="@+id/cellularBar" />
 
     <include
         layout="@layout/stats_panel"

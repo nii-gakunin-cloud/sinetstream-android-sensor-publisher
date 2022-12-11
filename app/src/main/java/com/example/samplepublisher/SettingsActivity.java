@@ -131,13 +131,17 @@ public class SettingsActivity extends AppCompatActivity implements
      */
     @Override
     public boolean onPreferenceStartFragment(
-            PreferenceFragmentCompat caller, Preference pref) {
+            @NonNull PreferenceFragmentCompat caller, @NonNull Preference pref) {
         // Instantiate the new Fragment
+        String className = pref.getFragment();
+        if (className == null) {
+            className = "N/A";
+        }
         final Bundle args = pref.getExtras();
         final Fragment fragment =
                 getSupportFragmentManager().
                         getFragmentFactory().instantiate(
-                        getClassLoader(), pref.getFragment());
+                        getClassLoader(), className);
         fragment.setArguments(args);
         fragment.setTargetFragment(caller, 0);
 

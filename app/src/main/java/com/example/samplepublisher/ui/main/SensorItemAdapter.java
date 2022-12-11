@@ -25,12 +25,11 @@ public class SensorItemAdapter extends
 
     private final List<SensorItem> mSensorItemList;
     private final SparseArray<SensorItemAdapter.ViewHolder> mViewHolderMap;
-    private final MainFragment.OnFragmentInteractionListener mListener;
+    private final SensorItemAdapterListener mListener;
+    private boolean mIsCollectiveOperation = false;
 
-    private boolean mIsAnyItemChecked = false;
-
-    public SensorItemAdapter(List<SensorItem> sensorItemList,
-                             MainFragment.OnFragmentInteractionListener mListener) {
+    public SensorItemAdapter(@NonNull List<SensorItem> sensorItemList,
+                             @NonNull SensorItemAdapterListener mListener) {
         this.mSensorItemList = sensorItemList;
         this.mViewHolderMap = new SparseArray<>();
         this.mListener = mListener;
@@ -87,27 +86,57 @@ public class SensorItemAdapter extends
      */
     @Override
     public void onBindViewHolder(@NonNull SensorItemAdapter.ViewHolder holder, int position) {
-        SensorItem sensorItem = mSensorItemList.get(position);
+        SensorItem sensorItem;
+        try {
+            sensorItem = mSensorItemList.get(position);
+        } catch (IndexOutOfBoundsException e) {
+            mListener.onError(TAG + ": onBindViewHolder: " + e.getMessage());
+            return;
+        }
 
-        holder.mSensorItem = sensorItem;
+        /*
+         * Here is a tricky part. Since RecyclerView recycles its rows
+         * as user scrolls up/down, current "OnCheckedChangeListener"
+         * attached to the old item might trigger unwanted situations.
+         * We need to remove existing lister at first.
+         *
+         * https://stackoverflow.com/questions/32427889/checkbox-in-recyclerview-keeps-on-checking-different-items
+         */
+        holder.mCheckBox.setOnCheckedChangeListener(null);
+
+        /* Set the holder contents from the corresponding SensorItem */
         String idx = "#" + (position + 1);
         holder.mIdView.setText(idx);
         holder.mCheckBox.setText(sensorItem.getSensorName());
+        holder.mCheckBox.setChecked(sensorItem.getChecked());
 
         /* Keep this ViewHolder by sensorType */
-        mViewHolderMap.append(sensorItem.getSensorType(), holder);
+        if (mViewHolderMap.get(sensorItem.getSensorType()) == null) {
+            mViewHolderMap.put(sensorItem.getSensorType(), holder);
+        }
 
         holder.mCheckBox.setOnCheckedChangeListener(
                 new CompoundButton.OnCheckedChangeListener() {
             @Override
             public void onCheckedChanged(
-                    CompoundButton compoundButton, boolean b) {
-                boolean prevState = mIsAnyItemChecked;
-                mIsAnyItemChecked = isAnyItemChecked();
-                if (prevState != mIsAnyItemChecked) {
-                    Log.d(TAG, "IsAnyItemChecked: " + prevState + " -> " + mIsAnyItemChecked);
-                    mListener.onSensorTypesChecked(mIsAnyItemChecked);
+                    CompoundButton compoundButton, boolean checked) {
+                /*
+                 * [NB]
+                 * This method is called for rows within the RecyclerView scope,
+                 * let's say it's around 10 items of the list.
+                 */
+                Log.d(TAG, "onCheckedChanged(" + sensorItem.getSensorName() + "): " + checked);
+
+                if (mIsCollectiveOperation) {
+                    /* Skip further processing */
+                    return;
                 }
+
+                /* Keep the CheckBox check state in the SensorItem object */
+                sensorItem.setChecked(checked);
+
+                /* Notify listener that a CheckBox check state has changed */
+                mListener.onItemCheckStateChanged(getCheckedItemCount(), getItemCount());
             }
         });
     }
@@ -122,33 +151,19 @@ public class SensorItemAdapter extends
         return mSensorItemList.size();
     }
 
-    public boolean isAnyItemChecked() {
-        boolean isChecked = false;
-        for (int i = 0, n = mSensorItemList.size(); i < n; i++) {
+    public int getCheckedItemCount() {
+        int checkedItems = 0;
+        for (int i = 0, n = getItemCount(); i < n; i++) {
             SensorItem sensorItem = mSensorItemList.get(i);
-
-            /*
-             * SensorItem does not have checkbox status.
-             * Get the ViewHolder by sensorType and check its contents.
-             */
-            int sensorType = sensorItem.getSensorType();
-            SensorItemAdapter.ViewHolder holder = mViewHolderMap.get(sensorType);
-            if (holder != null) {
-                /* DEBUG
-                Log.d(TAG, "Sensor[" + i + "/" + n + "]: " +
-                        holder.mCheckBox.getText() + " (" +
-                        holder.mCheckBox.isChecked() + ")");
-                 */
-                if (holder.mCheckBox.isChecked()) {
-                    isChecked = true;
-                    break; /* Early termination */
-                }
-            } else {
-                /* Invisible items will be paged out */
-                Log.d(TAG, "Sensor[" + i + "]: Empty holder");
+            if (sensorItem.getChecked()) {
+                checkedItems++;
             }
         }
-        return isChecked;
+        return checkedItems;
+    }
+
+    public boolean isAnyItemChecked() {
+        return (getCheckedItemCount() > 0);
     }
 
     public ArrayList<Integer> getCheckedSensorTypes() {
@@ -156,57 +171,53 @@ public class SensorItemAdapter extends
 
         for (int i = 0, n = mSensorItemList.size(); i < n; i++) {
             SensorItem sensorItem = mSensorItemList.get(i);
-
-            /*
-             * SensorItem does not have checkbox status.
-             * Get the ViewHolder by sensorType and check its contents.
-             */
-            int sensorType = sensorItem.getSensorType();
-            SensorItemAdapter.ViewHolder holder = mViewHolderMap.get(sensorType);
-            if (holder != null) {
-                /* DEBUG
-                Log.d(TAG, "Sensor[" + i + "/" + n + "]: " +
-                        holder.mCheckBox.getText() + " (" +
-                        holder.mCheckBox.isChecked() + ")");
-                 */
-                if (holder.mCheckBox.isChecked()) {
-                    sensorTypes.add(sensorType);
-                }
-            } else {
-                /* Invisible items will be paged out */
-                Log.d(TAG, "Sensor[" + i + "]: Empty holder");
+            if (sensorItem.getChecked()) {
+                int sensorType = sensorItem.getSensorType();
+                sensorTypes.add(sensorType);
             }
         }
         return sensorTypes;
     }
 
-    public void enableSensorTypes(boolean enabled) {
+    public void checkAllSensorTypes(boolean checked) {
+        mIsCollectiveOperation = true;
         for (int i = 0, n = mSensorItemList.size(); i < n; i++) {
             SensorItem sensorItem = mSensorItemList.get(i);
 
+            /* Update the latest check state in the SensorItem object */
+            sensorItem.setChecked(checked);
+
             /*
-             * SensorItem does not have checkbox status.
-             * Get the ViewHolder by sensorType and check its contents.
+             * Reflect to the CheckBox in the RecyclerView
+             *
+             * [NB]
+             * To avoid weird situation, just check/uncheck the CheckBox state
+             * but suppress further processing within its OnCheckedChangeListener.
              */
             int sensorType = sensorItem.getSensorType();
             SensorItemAdapter.ViewHolder holder = mViewHolderMap.get(sensorType);
             if (holder != null) {
-                /* DEBUG
-                Log.d(TAG, "Sensor[" + i + "/" + n + "]: " +
-                        holder.mCheckBox.getText() + " (" +
-                        holder.mCheckBox.isChecked() + ")");
-                 */
+                holder.mCheckBox.setChecked(checked);
+            }
+        }
+        mIsCollectiveOperation = false;
+    }
+
+    public void enableAllSensorTypes(boolean enabled) {
+        for (int i = 0, n = mSensorItemList.size(); i < n; i++) {
+            SensorItem sensorItem = mSensorItemList.get(i);
+
+            int sensorType = sensorItem.getSensorType();
+            SensorItemAdapter.ViewHolder holder = mViewHolderMap.get(sensorType);
+            if (holder != null) {
+                holder.mIdView.setEnabled(enabled);
                 holder.mCheckBox.setEnabled(enabled);
-            } else {
-                /* Invisible items will be paged out */
-                Log.d(TAG, "Sensor[" + i + "]: Empty holder");
             }
         }
     }
 
     public void addItem(Integer sensorType, String sensorTypeName) {
-        SensorItem sensorItem = new SensorItem(
-                sensorType, sensorTypeName);
+        SensorItem sensorItem = new SensorItem(sensorType, sensorTypeName);
         mSensorItemList.add(sensorItem);
         notifyItemInserted(mSensorItemList.size() - 1);
     }
@@ -215,15 +226,12 @@ public class SensorItemAdapter extends
         public final View mView;
         public final TextView mIdView;
         public final CheckBox mCheckBox;
-        //public final TextView mContentView;
-        SensorItem mSensorItem;
 
         public ViewHolder(View view) {
             super(view);
             mView = view;
             mIdView = view.findViewById(R.id.item_number);
             mCheckBox = view.findViewById(R.id.checkBox);
-            //mContentView = view.findViewById(R.id.content);
         }
 
         @NonNull
@@ -231,5 +239,11 @@ public class SensorItemAdapter extends
         public String toString() {
             return super.toString() + " '" + mCheckBox.getText() + "'";
         }
+    }
+
+    public interface SensorItemAdapterListener {
+        void onItemCheckStateChanged(int checkedItemCount, int totalItemCount);
+
+        void onError(String description);
     }
 }

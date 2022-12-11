@@ -64,7 +64,7 @@ public class MqttConnectSettingsFragment extends PreferenceFragmentCompat {
 
             etp.setOnPreferenceChangeListener(new Preference.OnPreferenceChangeListener() {
                 @Override
-                public boolean onPreferenceChange(Preference preference, Object newValue) {
+                public boolean onPreferenceChange(@NonNull Preference preference, Object newValue) {
                     AppCompatActivity activity = (AppCompatActivity) getActivity();
                     String strval = (String) newValue;
                     int seconds;
@@ -76,7 +76,7 @@ public class MqttConnectSettingsFragment extends PreferenceFragmentCompat {
                         seconds = Integer.parseInt(strval);
                     } catch (NumberFormatException e) {
                         DialogUtil.showErrorDialog(activity,
-                                "KeepAliveInterval: " + e.toString(),
+                                "KeepAliveInterval: " + e,
                                 null, false);
                         return false;
                     }
@@ -108,7 +108,7 @@ public class MqttConnectSettingsFragment extends PreferenceFragmentCompat {
 
             etp.setOnPreferenceChangeListener(new Preference.OnPreferenceChangeListener() {
                 @Override
-                public boolean onPreferenceChange(Preference preference, Object newValue) {
+                public boolean onPreferenceChange(@NonNull Preference preference, Object newValue) {
                     AppCompatActivity activity = (AppCompatActivity) getActivity();
                     String strval = (String) newValue;
                     int seconds;
@@ -120,7 +120,7 @@ public class MqttConnectSettingsFragment extends PreferenceFragmentCompat {
                         seconds = Integer.parseInt(strval);
                     } catch (NumberFormatException e) {
                         DialogUtil.showErrorDialog(activity,
-                                "ConnectionTimeOut: " + e.toString(),
+                                "ConnectionTimeOut: " + e,
                                 null, false);
                         return false;
                     }
@@ -153,7 +153,7 @@ public class MqttConnectSettingsFragment extends PreferenceFragmentCompat {
 
             etp.setOnPreferenceChangeListener(new Preference.OnPreferenceChangeListener() {
                 @Override
-                public boolean onPreferenceChange(Preference preference, Object newValue) {
+                public boolean onPreferenceChange(@NonNull Preference preference, Object newValue) {
                     AppCompatActivity activity = (AppCompatActivity) getActivity();
                     String strval = (String) newValue;
                     int milliseconds;
@@ -165,7 +165,7 @@ public class MqttConnectSettingsFragment extends PreferenceFragmentCompat {
                         milliseconds = Integer.parseInt(strval);
                     } catch (NumberFormatException e) {
                         DialogUtil.showErrorDialog(activity,
-                                "MaxReconnectDelay: " + e.toString(),
+                                "MaxReconnectDelay: " + e,
                                 null, false);
                         return false;
                     }

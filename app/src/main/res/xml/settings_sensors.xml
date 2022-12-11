@@ -43,11 +43,19 @@
             app:useSimpleSummaryProvider="true" />
     </PreferenceCategory>
 
-    <!-- Location -->
-    <PreferenceCategory app:title="@string/pref_title_location">
+    <!-- Device Info -->
+    <PreferenceCategory app:title="@string/pref_title_device_info">
+        <!-- Location -->
         <Preference
             app:fragment="com.example.samplepublisher.ui.settings.LocationSettingsFragment"
             app:summary="@string/pref_summary_location"
             app:title="@string/pref_title_location" />
+
+        <!-- Cellular -->
+        <Preference
+            app:fragment="com.example.samplepublisher.ui.settings.CellularSettingsFragment"
+            app:summary="@string/pref_summary_cellular"
+            app:title="@string/pref_title_cellular" />
     </PreferenceCategory>
+
 </PreferenceScreen>

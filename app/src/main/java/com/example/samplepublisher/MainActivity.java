@@ -21,6 +21,7 @@
 
 package com.example.samplepublisher;
 
+import android.annotation.SuppressLint;
 import android.app.Activity;
 import android.content.Intent;
 import android.content.SharedPreferences;
@@ -61,8 +62,12 @@ import java.util.Date;
 import java.util.Locale;
 
 import jp.ad.sinet.stream.android.api.SinetStreamWriterString;
+import jp.ad.sinet.stream.android.config.remote.ConfigServerSettings;
+import jp.ad.sinet.stream.android.helper.CellularMonitor;
+import jp.ad.sinet.stream.android.helper.CellularMonitorListener;
 import jp.ad.sinet.stream.android.helper.LocationTracker;
 import jp.ad.sinet.stream.android.helper.LocationTrackerListener;
+import jp.ad.sinet.stream.android.helper.PermissionHandler;
 import jp.ad.sinet.stream.android.helper.SensorController;
 import jp.ad.sinet.stream.android.helper.SensorListener;
 import jp.ad.sinet.stream.android.net.cert.KeyChainHandler;
@@ -73,15 +78,28 @@ public class MainActivity extends AppCompatActivity implements
         SinetStreamWriterString.SinetStreamWriterStringListener,
         ErrorDialogFragment.ErrorDialogListener,
         LocationTrackerListener,
+        CellularMonitorListener,
         SensorListener {
     private final String TAG = MainActivity.class.getSimpleName();
 
+    /* Sensor handling stuff */
     private SensorViewModel mViewModel = null;
     private final int mClientId = 1;
     private SensorController mSensorController = null;
+    private boolean mIsSensorPermissionGranted = false;
+    private ArrayList<Integer> mDeniedSensorTypes = null;
     private ArrayList<Integer> mRunningSensorTypes = null;
 
+    /* Cellular handling stuff */
+    private CellularMonitor mCellularMonitor = null;
+    private boolean mIsCellularDebug = false;
+    private boolean mIsCellularMonitorReady = false;
+    private boolean mPrefsCellular = false;
+    private Bundle mCellularCache = null;
+
+    /* Location handling stuff */
     private LocationTracker mLocationTracker = null;
+    private boolean mIsLocationDebug = false;
     private boolean mIsLocationTrackerReady = false;
     private boolean mPrefsLocation = false;
     private boolean mPrefsLocationAutoUpdate = false;
@@ -92,6 +110,13 @@ public class MainActivity extends AppCompatActivity implements
     private boolean mIsWriterAvailable = false;
 
     private SharedPreferences mSharedPreferences;
+
+    /* Parameters to be required for the remote configuration server access */
+    private boolean mUseConfigServer = false;
+    private String mServerUrl = null;
+    private String mAccount = null;
+    private String mSecretKey = null;
+    private ConfigServerSettings mConfigServerSettings = null;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -127,28 +152,52 @@ public class MainActivity extends AppCompatActivity implements
             Intent intent = getIntent();
             if (intent != null) {
                 bundle = intent.getExtras();
+
+                mUseConfigServer = bundle.getBoolean(
+                        BundleKeys.BUNDLE_KEY_USE_CONFIG_SERVER, false);
+                if (mUseConfigServer) {
+                    setupRemoteConfiguration();
+                }
+                mIsCellularDebug = bundle.getBoolean(
+                        BundleKeys.BUNDLE_KEY_CELLULAR_DEBUG, false);
+                mIsLocationDebug = bundle.getBoolean(
+                        BundleKeys.BUNDLE_KEY_LOCATION_DEBUG, false);
             }
+
+            /* Some sensor types may require runtime permissions */
+            checkSensorSettings();
 
             /* Check shared preference for location settings */
             checkLocationSettings();
+            checkCellularSettings();
 
             FragmentManager fragmentManager = getSupportFragmentManager();
             FragmentTransaction transaction = fragmentManager.beginTransaction();
             MainFragment mainFragment = new MainFragment();
-            if (mPrefsLocation) {
+            if (mPrefsCellular || mPrefsLocation) {
                 Bundle bundle1 = new Bundle();
-                final String provider;
-                if (mPrefsLocationAutoUpdate) {
-                    startLocationTracker(fragmentManager);
-                    provider = mLocationProvider;
-                } else {
-                    provider = LOCATION_PROVIDER_FIXED;
+                if (mPrefsCellular) {
+                    bundle1.putBoolean(BundleKeys.BUNDLE_KEY_CELLULAR, true);
+                    bundle1.putBoolean(BundleKeys.BUNDLE_KEY_CELLULAR_DEBUG, mIsCellularDebug);
                 }
-                bundle1.putString(BundleKeys.BUNDLE_KEY_LOCATION_PROVIDER,
-                        provider.toUpperCase(Locale.US));
+                if (mPrefsLocation) {
+                    final String provider;
+                    if (mPrefsLocationAutoUpdate) {
+                        provider = mLocationProvider;
+                        bundle1.putBoolean(BundleKeys.BUNDLE_KEY_LOCATION_DEBUG, mIsLocationDebug);
+                    } else {
+                        provider = LOCATION_PROVIDER_FIXED;
+                    }
+                    bundle1.putString(BundleKeys.BUNDLE_KEY_LOCATION_PROVIDER,
+                            provider.toUpperCase(Locale.US));
+                }
                 mainFragment.setArguments(bundle1);
             }
-            transaction.replace(R.id.container, mainFragment, "MainFragment");
+            if (mPrefsCellular || mPrefsLocationAutoUpdate) {
+                setFragmentOnAttachListener(fragmentManager);
+            }
+            transaction.replace(R.id.container, mainFragment,
+                    MainFragment.class.getSimpleName());
 
             /*
              * Since we don't have to control the SINETStream Writer module
@@ -157,7 +206,8 @@ public class MainActivity extends AppCompatActivity implements
              */
             SendFragment sendFragment = new SendFragment();
             sendFragment.setArguments(bundle);
-            transaction.add(sendFragment, "SendFragment");
+            transaction.add(sendFragment,
+                    SendFragment.class.getSimpleName());
 
             transaction.commit();
         }
@@ -166,8 +216,43 @@ public class MainActivity extends AppCompatActivity implements
     @Override
     protected void onDestroy() {
         Log.d(TAG, "onDestroy");
-        stopLocationTracker();
+        clearFragmentOnAttachListener();
+        clearRemoteConfiguration();
         super.onDestroy();
+    }
+
+    private void checkSensorSettings() {
+        PermissionHandler permissionHandler =
+                new PermissionHandler(
+                        MainActivity.this,
+                        new PermissionHandler.PermissionHandlerListener() {
+                            @Override
+                            public void onSensorPermissionGranted() {
+                                mIsSensorPermissionGranted = true;
+                            }
+
+                            @Override
+                            public void onSensorPermissionDenied(
+                                    @NonNull ArrayList<Integer> deniedSensorTypes) {
+                                mDeniedSensorTypes = deniedSensorTypes;
+                            }
+
+                            @Override
+                            public void onError(@NonNull String description) {
+                                MainActivity.this.onError(description);
+                            }
+                        });
+        permissionHandler.run();
+    }
+
+    private void checkCellularSettings() {
+        String key = getString(R.string.pref_key_toggle_cellular);
+        if (mSharedPreferences.getBoolean(key, false)) {
+            mPrefsCellular = true;
+            Log.d(TAG, "Cellular: ENABLED");
+        } else {
+            Log.d(TAG, "Cellular: DISABLED");
+        }
     }
 
     private void checkLocationSettings() {
@@ -189,7 +274,8 @@ public class MainActivity extends AppCompatActivity implements
         }
     }
 
-    private void startLocationTracker(FragmentManager fragmentManager) {
+    private void setFragmentOnAttachListener(@NonNull FragmentManager fragmentManager) {
+        Log.d(TAG, "setFragmentOnAttachListener");
         /*
          * Now that "Activity.onAttachFragment()" has deprecated, we handle the
          * fragment attach event by
@@ -198,28 +284,44 @@ public class MainActivity extends AppCompatActivity implements
         fragmentManager.addFragmentOnAttachListener(new FragmentOnAttachListener() {
             @Override
             public void onAttachFragment(
-                    @NonNull FragmentManager fragmentManager1,
+                    @NonNull FragmentManager fragmentManager,
                     @NonNull Fragment fragment) {
                 Log.d(TAG, "onAttachFragment");
-
                 if (fragment instanceof MainFragment) {
+                    if (mPrefsCellular) {
+                        Log.d(TAG, "Going to start CellularMonitor...");
+                        mCellularMonitor = new CellularMonitor(
+                                MainActivity.this, mClientId);
+                        mCellularMonitor.start();
+                    }
+
                     if (mPrefsLocationAutoUpdate) {
                         Log.d(TAG, "Going to start LocationTracker...");
-                        boolean useGpsProvider =
-                                (mLocationProvider != null
-                                        && mLocationProvider.equals(
-                                                getString(R.string.pref_default_location_provider)));
-                        if (useGpsProvider) {
+                        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
+                            boolean useGpsProvider =
+                                    (mLocationProvider != null
+                                            && mLocationProvider.equals(
+                                            getString(R.string.pref_default_location_provider)));
+
+                            if (useGpsProvider) {
+                                mLocationTracker =
+                                        new LocationTracker(
+                                                MainActivity.this,
+                                                LocationManager.GPS_PROVIDER,
+                                                mClientId);
+                            } else {
+                                mLocationTracker =
+                                        new LocationTracker(
+                                                MainActivity.this,
+                                                LocationManager.FUSED_PROVIDER,
+                                                mClientId);
+                            }
+                        } else {
+                            /* GPS only */
                             mLocationTracker =
                                     new LocationTracker(
                                             MainActivity.this,
                                             LocationManager.GPS_PROVIDER,
-                                            mClientId);
-                        } else {
-                            mLocationTracker =
-                                    new LocationTracker(
-                                            MainActivity.this,
-                                            LocationManager.FUSED_PROVIDER,
                                             mClientId);
                         }
                         mLocationTracker.start();
@@ -229,9 +331,52 @@ public class MainActivity extends AppCompatActivity implements
         });
     }
 
-    private void stopLocationTracker() {
+    private void clearFragmentOnAttachListener() {
+        Log.d(TAG, "clearFragmentOnAttachListener");
+        if (mCellularMonitor != null) {
+            mCellularMonitor.stop();
+            mCellularMonitor = null;
+        }
+
         if (mLocationTracker != null) {
             mLocationTracker.stop();
+            mLocationTracker = null;
+        }
+    }
+
+    private void setupRemoteConfiguration() {
+        Log.d(TAG, "setupRemoteConfiguration");
+        mConfigServerSettings = new ConfigServerSettings(this,
+                new ConfigServerSettings.ConfigServerSettingsListener() {
+                    @Override
+                    public void onParsed(@NonNull String serverUrl,
+                                         @NonNull String account,
+                                         @NonNull String secretKey) {
+                        mServerUrl = serverUrl;
+                        mAccount = account;
+                        mSecretKey = secretKey;
+
+                        buildFragments(null);
+                    }
+
+                    @Override
+                    public void onExpired() {
+                        MainActivity.this.onError("Auth.json has expired, get new one");
+                    }
+
+                    @Override
+                    public void onError(@NonNull String errmsg) {
+                        MainActivity.this.onError(errmsg);
+                    }
+                });
+        mConfigServerSettings.launchDocumentPicker();
+    }
+
+    private void clearRemoteConfiguration() {
+        Log.d(TAG, "clearRemoteConfiguration");
+        if (mConfigServerSettings != null) {
+            mConfigServerSettings.clearDocumentPicker();
+            mConfigServerSettings = null;
         }
     }
 
@@ -254,7 +399,7 @@ public class MainActivity extends AppCompatActivity implements
     private MainFragment lookupMainFragment() {
         MainFragment fragment;
         fragment = (MainFragment) getSupportFragmentManager().
-                findFragmentByTag("MainFragment");
+                findFragmentByTag(MainFragment.class.getSimpleName());
         if (fragment == null) {
             Log.e(TAG, "MainFragment not found?");
         }
@@ -265,7 +410,7 @@ public class MainActivity extends AppCompatActivity implements
     private SendFragment lookupSendFragment() {
         SendFragment fragment;
         fragment = (SendFragment) getSupportFragmentManager().
-                findFragmentByTag("SendFragment");
+                findFragmentByTag(SendFragment.class.getSimpleName());
         if (fragment == null) {
             Log.e(TAG, "SendFragment not found?");
         }
@@ -277,6 +422,9 @@ public class MainActivity extends AppCompatActivity implements
         Log.d(TAG, "onStart");
         super.onStart();
 
+        if (mUseConfigServer) {
+            return;
+        }
         if (getPrefsToggleSslTls()) {
             /* Use SSL/TLS */
             if (getPrefsClientCertificates()) {
@@ -320,9 +468,13 @@ public class MainActivity extends AppCompatActivity implements
 
         SendFragment sendFragment = lookupSendFragment();
         if (sendFragment != null) {
-            sendFragment.startWriter(alias);
-            toggleProgressBar(true);
+            if (mUseConfigServer) {
+                sendFragment.setRemoteConfig(
+                        mServerUrl, mAccount, mSecretKey);
+            }
+            sendFragment.initializeWriter(alias);
         }
+        toggleProgressBar(true);
     }
 
     @Override
@@ -333,7 +485,7 @@ public class MainActivity extends AppCompatActivity implements
         if (sendFragment != null) {
             /* Prevent timing-dependent NullPointerException */
             if (mIsWriterAvailable) {
-                sendFragment.stopWriter();
+                sendFragment.terminateWriter();
             }
             mIsWriterAvailable = false; /* Prevent race condition */
         }
@@ -360,6 +512,16 @@ public class MainActivity extends AppCompatActivity implements
             }
         }
 
+        /* Bind CellularService to receive signal strength updates */
+        if (mCellularMonitor != null) {
+            if (mIsCellularMonitorReady) {
+                Log.d(TAG, "Going to bind CellularService");
+                mCellularMonitor.bindCellularService();
+            } else {
+                Log.d(TAG, "Wait until CellularMonitor gets ready");
+            }
+        }
+
         /*
          * Bind SensorService after connection has established.
          *
@@ -379,6 +541,12 @@ public class MainActivity extends AppCompatActivity implements
         if (mLocationTracker != null) {
             Log.d(TAG, "Going to unbind LocationService");
             mLocationTracker.unbindLocationService();
+        }
+
+        /* Unbind CellularService to stop receiving signal strength updates */
+        if (mCellularMonitor != null) {
+            Log.d(TAG, "Going to unbind CellularService");
+            mCellularMonitor.unbindCellularService();
         }
 
         /*
@@ -401,29 +569,6 @@ public class MainActivity extends AppCompatActivity implements
             return true;
         }
         return super.onOptionsItemSelected(item);
-    }
-
-    @Override
-    public void onSensorTypesChecked(boolean checked) {
-        /* Implementation of MainFragment.onSensorTypesChosen */
-        Log.d(TAG, "onSensorTypesChecked: " + checked);
-
-        MainFragment mainFragment = lookupMainFragment();
-        if (mainFragment == null) {
-            return;
-        }
-        RecyclerView recyclerView = findViewById(R.id.sensorItemList);
-        if (recyclerView != null) {
-            SensorItemAdapter sensorItemAdapter =
-                    (SensorItemAdapter) recyclerView.getAdapter();
-            if (sensorItemAdapter != null) {
-                mainFragment.enableSensorOnOffButton(checked);
-            } else {
-                Log.w(TAG, "SensorItemAdapter has gone?");
-            }
-        } else {
-            Log.w(TAG, "RecyclerView has gone?");
-        }
     }
 
     @Override
@@ -459,7 +604,7 @@ public class MainActivity extends AppCompatActivity implements
                 }
 
                 /* Prevent touching sensor list while running */
-                sensorItemAdapter.enableSensorTypes(false);
+                sensorItemAdapter.enableAllSensorTypes(false);
             }
         } else {
             Log.w(TAG, "RecyclerView has gone?");
@@ -486,7 +631,7 @@ public class MainActivity extends AppCompatActivity implements
                 mRunningSensorTypes = null;
 
                 /* Enable sensor list again */
-                sensorItemAdapter.enableSensorTypes(true);
+                sensorItemAdapter.enableAllSensorTypes(true);
             }
         } else {
             Log.w(TAG, "RecyclerView has gone?");
@@ -616,10 +761,8 @@ public class MainActivity extends AppCompatActivity implements
              */
             sval1 = sharedPreferences.getString(
                     getString(R.string.pref_key_sensor_interval_timer), "10");
-            if (sval1 != null) {
-                long seconds = Long.parseLong(sval1);
-                mSensorController.setIntervalTimer(seconds);
-            }
+            long seconds = Long.parseLong(sval1);
+            mSensorController.setIntervalTimer(seconds);
 
             String publisher = sharedPreferences.
                     getString("publisher", null);
@@ -627,6 +770,13 @@ public class MainActivity extends AppCompatActivity implements
                     getString("note", null);
             mSensorController.setUserData(publisher, note);
 
+            if (mPrefsCellular) {
+                if (mCellularCache != null) {
+                    Log.d(TAG, "Cellular: Set initial by cached data");
+                    onCellularDataReceived(mCellularCache);
+                    mCellularCache = null;
+                }
+            }
             if (mPrefsLocation) {
                 if (mPrefsLocationAutoUpdate) {
                     /* Latest location will be set and updated by the system */
@@ -682,19 +832,24 @@ public class MainActivity extends AppCompatActivity implements
         /* Implementation of SensorListener.onSensorDataReceived */
         Log.d(TAG, "onSensorDataReceived");
 
-        MainFragment mainFragment = lookupMainFragment();
-        if (mainFragment != null) {
-            mainFragment.onSensorDataReceived(data);
+        if (mIsWriterAvailable) {
+            SendFragment sendFragment = lookupSendFragment();
+            if (sendFragment != null) {
+                sendFragment.sendMessage(data);
+            }
         }
+    }
 
+    /**
+     * Called when initialization process, including configuration loading,
+     * has finished.
+     * Now user can call "SinetStreamWriter<T>.setup()" next.
+     */
+    @Override
+    public void onWriterConfigLoaded() {
         SendFragment sendFragment = lookupSendFragment();
         if (sendFragment != null) {
-            if (mIsWriterAvailable) {
-                Log.d(TAG, "Going to publish via SINETStream...");
-                sendFragment.sendMessage(data);
-            } else {
-                Log.d(TAG, "Writer is NOT available");
-            }
+            sendFragment.setupWriter();
         }
     }
 
@@ -717,8 +872,13 @@ public class MainActivity extends AppCompatActivity implements
             if (mSensorController == null) {
                 mSensorController =
                         new SensorController(this, mClientId);
+                if (mDeniedSensorTypes != null) {
+                    mSensorController.setExcludeSensorTypes(mDeniedSensorTypes);
+                }
                 mSensorController.bindSensorService();
                 Log.d(TAG, "Wait until sensors become available");
+            } else {
+                Log.d(TAG, "Reconnect completed, Going to resume publish");
             }
         } else {
             /* Connection has closed */
@@ -730,6 +890,18 @@ public class MainActivity extends AppCompatActivity implements
     }
 
     /**
+     * Called when the broker connection has lost and auto-reconnect
+     * procedure is in progress.
+     */
+    @Override
+    public void onWriterReconnectInProgress() {
+        /* Implementation of SinetStreamWriterListener.onWriterReconnectInProgress */
+        Log.d(TAG, "onWriterReconnectInProgress");
+        mIsWriterAvailable = false;
+        toggleProgressBar(true);
+    }
+
+    /**
      * Called when {@code publish()} has completed successfully.
      *
      * @param message  Original message for publish, not {@code null}.
@@ -737,6 +909,11 @@ public class MainActivity extends AppCompatActivity implements
      */
     @Override
     public void onPublished(@NonNull String message, @Nullable Object userData) {
+        /* Implementation of SinetStreamWriterListener.onPublished */
+        MainFragment mainFragment = lookupMainFragment();
+        if (mainFragment != null) {
+            mainFragment.onSensorDataReceived(message);
+        }
         SendFragment sendFragment = lookupSendFragment();
         if (sendFragment != null) {
             sendFragment.onPublished(message, userData);
@@ -813,7 +990,7 @@ public class MainActivity extends AppCompatActivity implements
     public void onLocationDataReceived(@NonNull Location location) {
         if (mSensorController != null) {
             mSensorController.setLocation(
-                    location.getLatitude(), location.getLongitude());
+                    location.getLatitude(), location.getLongitude(), location.getTime());
         } else {
             /* SensorService is not yet bound. Keep location data */
             mLocationCache = location;
@@ -825,12 +1002,13 @@ public class MainActivity extends AppCompatActivity implements
         }
     }
 
+    @SuppressLint("ObsoleteSdkInt")
     private String dumpLocation(@NonNull Location location) {
         String s = "";
         double latitude = location.getLatitude();
         double longitude = location.getLongitude();
 
-        if (location.getProvider().equals(LOCATION_PROVIDER_FIXED)) {
+        if (location.getProvider().equals(LOCATION_PROVIDER_FIXED) || !mIsLocationDebug) {
             s += String.format(Locale.ENGLISH, "%.6f", latitude);
             s += ", ";
             s += String.format(Locale.ENGLISH, "%.6f", longitude);
@@ -880,18 +1058,60 @@ public class MainActivity extends AppCompatActivity implements
         return s;
     }
 
+    /**
+     * Called when device check for cellular network availability has finished.
+     *
+     * @param isReady true if we can call {@link CellularMonitor#bindCellularService}.
+     */
     @Override
-    public void onError(@NonNull String message) {
+    public void onCellularSettingsChecked(boolean isReady) {
+        Log.d(TAG, "onCellularSettingsChecked: isReady=" + isReady);
+
+        /*
+         * Mark as CellularMonitor is ready to bind or not.
+         * Let onResume() handle the rest of works.
+         */
+        mIsCellularMonitorReady = isReady;
+    }
+
+    /**
+     * Called when new cellular network data has received.
+     *
+     * @param bundle the telephony data to be passed to {@link SensorController}
+     */
+    @Override
+    public void onCellularDataReceived(@NonNull Bundle bundle) {
+        if (mSensorController != null) {
+            mSensorController.setCellularData(bundle);
+        } else {
+            /* SensorService is not yet bound. Keep cellular data */
+            mCellularCache = bundle;
+        }
+
+        mCellularMonitor.getNetworkSummary(bundle);
+    }
+
+    @Override
+    public void onCellularSummary(@NonNull String networkType, @NonNull String data) {
+        MainFragment mainFragment = lookupMainFragment();
+        if (mainFragment != null) {
+            mainFragment.updateCellularInfo(networkType, data);
+        }
+    }
+
+    @Override
+    public void onError(@NonNull String description) {
         /* Implementation of MainFragment */
         /* Implementation of SendFragment */
         /* Implementation of SinetStreamWriterListener */
         /* Implementation of LocationTrackerListener */
         /* Implementation of SensorListener */
-        Log.e(TAG, "onError: " + message);
+        Log.e(TAG, "onError: " + description);
 
+        onWriterStatusChanged(false);
         toggleProgressBar(false);
         DialogUtil.showErrorDialog(
-                this, message, null, true);
+                this, description, null, true);
 
         /*
          * If user pressed OK button on the error dialog window,

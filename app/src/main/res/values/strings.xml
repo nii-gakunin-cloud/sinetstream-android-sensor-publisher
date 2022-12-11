@@ -9,6 +9,7 @@
     <!-- LauncherActivity -->
     <string name="activity_name_launcher">Sensor Publisher</string>
     <string name="button_run">Run</string>
+    <string name="button_run_with_config_server">Run\nwith ConfigServer</string>
     <string name="button_settings">Settings</string>
     <string name="menu_help">Help</string>
     <string name="menu_about">About</string>
@@ -19,10 +20,14 @@
     <string name="activity_name_main">Main</string>
     <string name="stats_last_sent">Last Sent: </string>
     <string name="stats_sent_count">Sent Msg: </string>
-    <string name="location_label">Location</string>
+    <string name="cellular_label">Cellular: </string>
+    <string name="location_label">Location: </string>
     <string name="button_label_reset">Reset</string>
     <string name="button_label_run">Run</string>
     <string name="button_label_stop">Stop</string>
+    <string name="checkbox_label_select_all">Select all sensor types</string>
+    <string name="sensor_item_number_placeholder">#0</string>
+    <string name="sensor_type_name_placeholder">Sensor XXX</string>
 
     <!-- ErrorDialog -->
     <string name="dialog_title_error">Error</string>
@@ -53,11 +58,12 @@
     <string name="pref_key_user_data_note">note</string>
     <string name="pref_item_user_data_note">User Data: Note</string>
 
+    <string name="pref_title_device_info">Device Info</string>
     <!-- LocationSettingsFragment -->
     <string name="pref_title_location">Location</string>
     <string name="pref_summary_location">Location attributes</string>
     <string name="pref_key_toggle_location">toggle_location</string>
-    <string name="pref_item_toggle_location">Set Geological Location</string>
+    <string name="pref_item_toggle_location">Track Geological Location</string>
     <string name="pref_key_toggle_location_auto_update">toggle_location_auto_update</string>
     <string name="pref_item_toggle_location_auto_update">Enable Auto Update</string>
     <string name="pref_key_location_provider">location_provider</string>
@@ -67,12 +73,26 @@
     <string name="pref_item_location_latitude">Latitude [-90.0, 90.0]</string>
     <string name="pref_key_location_longitude">location_longitude</string>
     <string name="pref_item_location_longitude">Longitude [-180.0, 180.0]</string>
+    <string name="pref_key_toggle_location_debug">toggle_location_debug</string>
+    <string name="pref_item_toggle_location_debug">Enable DEBUG mode</string>
+
+    <!-- CellularSettingsFragment -->
+    <string name="pref_title_cellular">Cellular</string>
+    <string name="pref_summary_cellular">Cellular attributes</string>
+    <string name="pref_key_toggle_cellular">toggle_cellular</string>
+    <string name="pref_item_toggle_cellular">Monitor Signal Strengths</string>
+    <string name="pref_key_toggle_cellular_debug">toggle_cellular_debug</string>
+    <string name="pref_item_toggle_cellular_debug">Enable DEBUG mode</string>
 
     <!--
         SINETStream common settings
     -->
     <string name="pref_title_sinetstream">SINETStream</string>
     <string name="pref_summary_sinetstream">SINETStream control parameters</string>
+
+    <!-- SinetStreamSettingsFragment -->
+    <string name="pref_key_toggle_sinetstream_manual_config">Manual Configuration</string>
+    <string name="pref_item_toggle_sinetstream_manual_config">Enable Manual Configuration</string>
 
     <!-- ServiceSettingsFragment -->
     <string name="pref_title_service">Service</string>
@@ -147,7 +167,7 @@
     <string name="pref_item_crypto_kdf_password">Password</string>
     <string name="pref_key_crypto_kdf_algorithm">crypto_kdf_algorithm</string>
     <string name="pref_item_crypto_kdf_algorithm">Algorithm</string>
-    <string name="pref_default_crypto_kbf_algorithm">pbkdf2</string>
+    <string name="pref_default_crypto_kbf_algorithm">PBKDF2WithHmacSHA256</string>
     <string name="pref_key_crypto_kdf_salt_bytes">crypto_kdf_salt_bytes</string>
     <string name="pref_item_crypto_kdf_salt_bytes">Salt Bytes</string>
     <string name="pref_key_crypto_kdf_iteration">crypto_kdf_iteration</string>

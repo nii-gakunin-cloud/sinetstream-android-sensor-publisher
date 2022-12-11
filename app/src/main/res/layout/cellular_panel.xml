@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
 <!--
-  ~ Copyright (c) 2021 National Institute of Informatics
+  ~ Copyright (c) 2022 National Institute of Informatics
   ~
   ~  Licensed to the Apache Software Foundation (ASF) under one
   ~  or more contributor license agreements.  See the NOTICE file
@@ -22,14 +22,14 @@
 <androidx.constraintlayout.widget.ConstraintLayout
     xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:app="http://schemas.android.com/apk/res-auto"
-    android:id="@+id/locationBar"
+    android:id="@+id/cellularBar"
     android:layout_width="match_parent"
     android:layout_height="wrap_content"
     android:background="@color/colorPrimary"
     android:orientation="vertical">
 
     <androidx.constraintlayout.widget.ConstraintLayout
-        android:id="@+id/locationPanel"
+        android:id="@+id/cellularPanel"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:layout_weight="1"
@@ -39,39 +39,39 @@
         app:layout_constraintTop_toTopOf="parent">
 
         <TextView
-            android:id="@+id/location_label"
+            android:id="@+id/cellular_label"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:layout_marginStart="4dp"
             android:layout_marginTop="4dp"
-            android:text="@string/location_label"
+            android:text="@string/cellular_label"
             android:textAlignment="viewStart"
             android:textColor="@android:color/white"
-            app:layout_constraintEnd_toStartOf="@id/location_provider"
+            app:layout_constraintEnd_toStartOf="@id/network_type"
             app:layout_constraintStart_toStartOf="parent"
             app:layout_constraintTop_toTopOf="parent" />
 
         <TextView
-            android:id="@+id/location_provider"
+            android:id="@+id/network_type"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:layout_marginStart="4dp"
             android:layout_marginTop="4dp"
-            android:text="(gps)"
+            android:text="GSM"
             android:textAlignment="viewStart"
             android:textColor="@android:color/white"
-            app:layout_constraintBottom_toTopOf="@id/location_value"
-            app:layout_constraintStart_toEndOf="@id/location_label"
+            app:layout_constraintBottom_toTopOf="@id/cellular_value"
+            app:layout_constraintStart_toEndOf="@id/cellular_label"
             app:layout_constraintTop_toTopOf="parent"
             app:layout_constraintVertical_bias="0.0" />
 
         <TextView
-            android:id="@+id/location_value"
+            android:id="@+id/cellular_value"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:layout_marginStart="4dp"
             android:layout_marginBottom="4dp"
-            android:text="37.3774, -122.0648"
+            android:text="N/A"
             android:textAlignment="viewStart"
             android:textColor="@android:color/white"
             app:layout_constraintBottom_toBottomOf="parent"

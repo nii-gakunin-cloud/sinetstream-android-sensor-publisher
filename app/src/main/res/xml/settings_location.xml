@@ -61,5 +61,12 @@
             app:title="@string/pref_item_location_provider"
             app:useSimpleSummaryProvider="true" />
 
+        <SwitchPreferenceCompat
+            app:allowDividerAbove="true"
+            app:defaultValue="false"
+            app:dependency="@string/pref_key_toggle_location"
+            app:key="@string/pref_key_toggle_location_debug"
+            app:title="@string/pref_item_toggle_location_debug" />
+
     </PreferenceCategory>
 </PreferenceScreen>

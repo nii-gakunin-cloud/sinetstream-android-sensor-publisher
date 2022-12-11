@@ -26,6 +26,7 @@ import android.text.InputType;
 import android.widget.EditText;
 
 import androidx.annotation.NonNull;
+import androidx.annotation.Nullable;
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.preference.EditTextPreference;
 import androidx.preference.Preference;
@@ -48,7 +49,7 @@ public class LocationSettingsFragment extends PreferenceFragmentCompat {
      *                           {@link PreferenceScreen} with this key.
      */
     @Override
-    public void onCreatePreferences(Bundle savedInstanceState, String rootKey) {
+    public void onCreatePreferences(@Nullable Bundle savedInstanceState, @Nullable String rootKey) {
         setPreferencesFromResource(R.xml.settings_location, rootKey);
 
         EditTextPreference etp;
@@ -69,7 +70,7 @@ public class LocationSettingsFragment extends PreferenceFragmentCompat {
 
             etp.setOnPreferenceChangeListener(new Preference.OnPreferenceChangeListener() {
                 @Override
-                public boolean onPreferenceChange(Preference preference, Object newValue) {
+                public boolean onPreferenceChange(@NonNull Preference preference, Object newValue) {
                     AppCompatActivity activity = (AppCompatActivity) getActivity();
                     String strval = (String) newValue;
                     double latitude;
@@ -81,7 +82,7 @@ public class LocationSettingsFragment extends PreferenceFragmentCompat {
                         latitude = Double.parseDouble(strval);
                     } catch (NumberFormatException e) {
                         DialogUtil.showErrorDialog(activity,
-                                "Latitude: " + e.toString(),
+                                "Latitude: " + e,
                                 null, false);
                         return false;
                     }
@@ -114,7 +115,7 @@ public class LocationSettingsFragment extends PreferenceFragmentCompat {
 
             etp.setOnPreferenceChangeListener(new Preference.OnPreferenceChangeListener() {
                 @Override
-                public boolean onPreferenceChange(Preference preference, Object newValue) {
+                public boolean onPreferenceChange(@NonNull Preference preference, Object newValue) {
                     AppCompatActivity activity = (AppCompatActivity) getActivity();
                     String strval = (String) newValue;
                     double longitude;
@@ -126,7 +127,7 @@ public class LocationSettingsFragment extends PreferenceFragmentCompat {
                         longitude = Double.parseDouble(strval);
                     } catch (NumberFormatException e) {
                         DialogUtil.showErrorDialog(activity,
-                                "Longitude: " + e.toString(),
+                                "Longitude: " + e,
                                 null, false);
                         return false;
                     }

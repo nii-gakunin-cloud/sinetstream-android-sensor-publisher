@@ -63,7 +63,7 @@ public class BrokerSettingsFragment extends PreferenceFragmentCompat {
                  * @return A CharSequence that will be displayed as the summary for this preference
                  */
                 @Override
-                public CharSequence provideSummary(EditTextPreference preference) {
+                public CharSequence provideSummary(@NonNull EditTextPreference preference) {
                     String text = preference.getText();
                     if (TextUtils.isEmpty(text)){
                         return getString(R.string.pref_summary_mandatory_notset);
@@ -92,7 +92,7 @@ public class BrokerSettingsFragment extends PreferenceFragmentCompat {
                  * @return A CharSequence that will be displayed as the summary for this preference
                  */
                 @Override
-                public CharSequence provideSummary(EditTextPreference preference) {
+                public CharSequence provideSummary(@NonNull EditTextPreference preference) {
                     String text = preference.getText();
                     if (TextUtils.isEmpty(text)){
                         return getString(R.string.pref_summary_mandatory_notset);
@@ -103,7 +103,7 @@ public class BrokerSettingsFragment extends PreferenceFragmentCompat {
 
             etp.setOnPreferenceChangeListener(new Preference.OnPreferenceChangeListener() {
                 @Override
-                public boolean onPreferenceChange(Preference preference, Object newValue) {
+                public boolean onPreferenceChange(@NonNull Preference preference, Object newValue) {
                     AppCompatActivity activity = (AppCompatActivity) getActivity();
                     String strval = (String) newValue;
                     int port;
@@ -115,7 +115,7 @@ public class BrokerSettingsFragment extends PreferenceFragmentCompat {
                         port = Integer.parseInt(strval);
                     } catch (NumberFormatException e) {
                         DialogUtil.showErrorDialog(activity,
-                                "Port Number: " + e.toString(),
+                                "Port Number: " + e,
                                 null, false);
                         return false;
                     }

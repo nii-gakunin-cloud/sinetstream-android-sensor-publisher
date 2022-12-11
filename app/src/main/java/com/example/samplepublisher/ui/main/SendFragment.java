@@ -23,11 +23,16 @@ import jp.ad.sinet.stream.android.api.SinetStreamWriterString;
  * create an instance of this fragment.
  */
 public class SendFragment extends Fragment {
-    private final static String TAG = SendFragment.class.getSimpleName();
+    private final String TAG = SendFragment.class.getSimpleName();
 
     private String mServiceName = "";
     private SinetStreamWriterString mSinetStreamWriter = null;
     private SendFragmentListener mListener;
+
+    private String mServerUrl = null;
+    private String mAccount = null;
+    private String mSecretKey = null;
+    private boolean mUseRemoteConfig = false;
 
     public SendFragment() {
         // Required empty public constructor
@@ -47,7 +52,7 @@ public class SendFragment extends Fragment {
         if (context instanceof SendFragmentListener) {
             mListener = (SendFragmentListener) context;
         } else {
-            throw new RuntimeException(context.toString() +
+            throw new RuntimeException(context +
                     " must implement SendFragmentListener");
         }
     }
@@ -194,20 +199,41 @@ public class SendFragment extends Fragment {
         super.onStop();
     }
 
-    public void startWriter(@Nullable String alias) {
+    public void setRemoteConfig(
+            @NonNull String serverUrl,
+            @NonNull String account,
+            @NonNull String secretKey) {
+        this.mServerUrl = serverUrl;
+        this.mAccount = account;
+        this.mSecretKey = secretKey;
+        this.mUseRemoteConfig = true;
+    }
+
+    public void initializeWriter(@Nullable String alias) {
         if (mSinetStreamWriter != null) {
+            if (mUseRemoteConfig) {
+                mSinetStreamWriter.setRemoteConfig(mServerUrl, mAccount, mSecretKey);
+            }
             mSinetStreamWriter.initialize(mServiceName, alias);
         }
     }
 
-    public void stopWriter() {
+    public void terminateWriter() {
         if (mSinetStreamWriter != null) {
             mSinetStreamWriter.terminate();
         }
     }
 
+    public void setupWriter() {
+        if (mSinetStreamWriter != null) {
+            mSinetStreamWriter.setup();
+        }
+    }
+
     public void sendMessage(@NonNull String message) {
+        /* DEBUG
         Log.d(TAG, "msg=" + message);
+         */
 
         if (mSinetStreamWriter != null) {
             mSinetStreamWriter.publish(message, null);
@@ -223,6 +249,6 @@ public class SendFragment extends Fragment {
      * http://developer.android.com/training/basics/fragments/communicating.html
      */
     public interface SendFragmentListener {
-        void onError(@NonNull String errorMessage);
+        void onError(@NonNull String description);
     }
 }

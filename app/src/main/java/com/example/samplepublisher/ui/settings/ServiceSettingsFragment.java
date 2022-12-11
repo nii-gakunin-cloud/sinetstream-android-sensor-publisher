@@ -24,6 +24,7 @@ package com.example.samplepublisher.ui.settings;
 import android.os.Bundle;
 import android.text.TextUtils;
 
+import androidx.annotation.NonNull;
 import androidx.preference.EditTextPreference;
 import androidx.preference.Preference;
 import androidx.preference.PreferenceFragmentCompat;
@@ -58,7 +59,7 @@ public class ServiceSettingsFragment extends PreferenceFragmentCompat {
                  * @return A CharSequence that will be displayed as the summary for this preference
                  */
                 @Override
-                public CharSequence provideSummary(EditTextPreference preference) {
+                public CharSequence provideSummary(@NonNull EditTextPreference preference) {
                     String text = preference.getText();
                     if (TextUtils.isEmpty(text)){
                         return getString(R.string.pref_summary_mandatory_notset);
@@ -79,7 +80,7 @@ public class ServiceSettingsFragment extends PreferenceFragmentCompat {
                  * @return A CharSequence that will be displayed as the summary for this preference
                  */
                 @Override
-                public CharSequence provideSummary(EditTextPreference preference) {
+                public CharSequence provideSummary(@NonNull EditTextPreference preference) {
                     String text = preference.getText();
                     if (TextUtils.isEmpty(text)){
                         return getString(R.string.pref_summary_mandatory_notset);

@@ -83,6 +83,7 @@
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:text="@string/button_run"
+        android:textAlignment="center"
         app:layout_constraintEnd_toEndOf="@+id/button_run"
         app:layout_constraintStart_toStartOf="@id/button_run"
         app:layout_constraintTop_toBottomOf="@id/button_run" />
@@ -92,6 +93,7 @@
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:text="@string/button_settings"
+        android:textAlignment="center"
         app:layout_constraintEnd_toEndOf="@+id/button_settings"
         app:layout_constraintStart_toStartOf="@id/button_settings"
         app:layout_constraintTop_toBottomOf="@id/button_settings" />

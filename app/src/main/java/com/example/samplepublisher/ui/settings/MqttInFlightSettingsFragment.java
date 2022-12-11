@@ -64,7 +64,7 @@ public class MqttInFlightSettingsFragment extends PreferenceFragmentCompat {
 
             etp.setOnPreferenceChangeListener(new Preference.OnPreferenceChangeListener() {
                 @Override
-                public boolean onPreferenceChange(Preference preference, Object newValue) {
+                public boolean onPreferenceChange(@NonNull Preference preference, Object newValue) {
                     AppCompatActivity activity = (AppCompatActivity) getActivity();
                     String strval = (String) newValue;
                     int inflight;
@@ -76,7 +76,7 @@ public class MqttInFlightSettingsFragment extends PreferenceFragmentCompat {
                         inflight = Integer.parseInt(strval);
                     } catch (NumberFormatException e) {
                         DialogUtil.showErrorDialog(activity,
-                                "InFlight: " + e.toString(),
+                                "InFlight: " + e,
                                 null, false);
                         return false;
                     }

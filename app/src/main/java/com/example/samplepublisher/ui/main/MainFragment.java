@@ -7,6 +7,7 @@ import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
+import android.widget.CheckBox;
 import android.widget.CompoundButton;
 import android.widget.ImageButton;
 import android.widget.LinearLayout;
@@ -44,7 +45,11 @@ public class MainFragment extends Fragment {
     //private SensorViewModel mViewModel;
     private long mSentCount = 0L;
     private final DateTimeUtil mDateTimeUtil = new DateTimeUtil();
+    private boolean mIsPartialUnchecked = false;
+    private boolean mMonitorCellularSignalStrength = false;
     private String mLocationProvider = null;
+    private boolean mIsCellularDebug = false;
+    private boolean mIsLocationDebug = false;
 
     /**
      * Mandatory empty constructor for the fragment manager to instantiate the
@@ -68,7 +73,7 @@ public class MainFragment extends Fragment {
         if (context instanceof OnFragmentInteractionListener) {
             mListener = (OnFragmentInteractionListener) context;
         } else {
-            throw new RuntimeException(context.toString() +
+            throw new RuntimeException(context +
                     " must implement OnFragmentInteractionListener");
         }
     }
@@ -113,35 +118,184 @@ public class MainFragment extends Fragment {
          */
         Bundle bundle = getArguments();
         if (bundle != null) {
+            mMonitorCellularSignalStrength =
+                    bundle.getBoolean(BundleKeys.BUNDLE_KEY_CELLULAR,
+                            false);
+            mIsCellularDebug =
+                    bundle.getBoolean(BundleKeys.BUNDLE_KEY_CELLULAR_DEBUG,
+                            false);
+
             String locationProvider =
                     bundle.getString(BundleKeys.BUNDLE_KEY_LOCATION_PROVIDER);
             if (locationProvider != null) {
                 mLocationProvider = locationProvider;
             }
+            mIsLocationDebug =
+                    bundle.getBoolean(BundleKeys.BUNDLE_KEY_LOCATION_DEBUG,
+                            false);
         }
     }
 
+    /**
+     * Called to have the fragment instantiate its user interface view.
+     * This is optional, and non-graphical fragments can return null. This will be called between
+     * {@link #onCreate(Bundle)} and {@link #onViewCreated(View, Bundle)}.
+     * <p>A default View can be returned by calling {#Fragment(int)} in your
+     * constructor. Otherwise, this method returns null.
+     *
+     * <p>It is recommended to <strong>only</strong> inflate the layout in this method and move
+     * logic that operates on the returned View to {@link #onViewCreated(View, Bundle)}.
+     *
+     * <p>If you return a View from here, you will later be called in
+     * {@link #onDestroyView} when the view is being released.
+     *
+     * @param inflater           The LayoutInflater object that can be used to inflate
+     *                           any views in the fragment,
+     * @param container          If non-null, this is the parent view that the fragment's
+     *                           UI should be attached to.  The fragment should not add the view itself,
+     *                           but this can be used to generate the LayoutParams of the view.
+     * @param savedInstanceState If non-null, this fragment is being re-constructed
+     *                           from a previous saved state as given here.
+     * @return Return the View for the fragment's UI, or null.
+     */
     @Nullable
     @Override
-    public View onCreateView(@NonNull LayoutInflater inflater, @Nullable ViewGroup container,
+    public View onCreateView(@NonNull LayoutInflater inflater,
+                             @Nullable ViewGroup container,
                              @Nullable Bundle savedInstanceState) {
-        View rootView = inflater.inflate(R.layout.fragment_main, container, false);
+        // return super.onCreateView(inflater, container, savedInstanceState);
+        return inflater.inflate(R.layout.fragment_main, container, false);
+    }
 
-        RecyclerView recyclerView = rootView.findViewById(R.id.sensorItemList);
+    /**
+     * Called immediately after {@link #onCreateView(LayoutInflater, ViewGroup, Bundle)}
+     * has returned, but before any saved state has been restored in to the view.
+     * This gives subclasses a chance to initialize themselves once
+     * they know their view hierarchy has been completely created.  The fragment's
+     * view hierarchy is not however attached to its parent at this point.
+     *
+     * @param view               The View returned by {@link #onCreateView(LayoutInflater, ViewGroup, Bundle)}.
+     * @param savedInstanceState If non-null, this fragment is being re-constructed
+     */
+    @Override
+    public void onViewCreated(@NonNull View view, @Nullable Bundle savedInstanceState) {
+        super.onViewCreated(view, savedInstanceState);
+
+        /* Setup for each view component */
+        SensorItemAdapter sensorItemAdapter = setupSensorItemAdapter(view);
+        setupCheckBoxSelectAll(view, sensorItemAdapter);
+        setupRecyclerView(view, sensorItemAdapter);
+        setupCellularPanel(view);
+        setupLocationPanel(view);
+        setupToggleButton(view);
+        setupResetButton(view);
+    }
+
+    private void setupCheckBoxSelectAll(
+            @NonNull View view, @NonNull SensorItemAdapter sensorItemAdapter) {
+        CheckBox checkBoxSelectAll = view.findViewById(R.id.checkBoxSelectAll);
+        if (checkBoxSelectAll != null) {
+            checkBoxSelectAll.setOnCheckedChangeListener(
+                    new CompoundButton.OnCheckedChangeListener() {
+                        @Override
+                        public void onCheckedChanged(
+                                CompoundButton buttonView, boolean isChecked) {
+                            Log.d(TAG, "CheckBoxSelectAll: isChecked=" + isChecked);
+                            if (mIsPartialUnchecked) {
+                                Log.d(TAG, "Uncheck item one by one");
+                            } else {
+                                sensorItemAdapter.checkAllSensorTypes(isChecked);
+                                enableSensorOnOffButton(isChecked);
+                            }
+                        }
+                    });
+        } else {
+            Log.e(TAG, "CheckBoxSelectAll not found?");
+        }
+    }
+
+    private void setupRecyclerView(
+            @NonNull View view, @NonNull SensorItemAdapter sensorItemAdapter) {
+        RecyclerView recyclerView = view.findViewById(R.id.sensorItemList);
         if (recyclerView != null) {
-            // Set the adapter
             Context context = recyclerView.getContext();
-            LinearLayoutManager mLinearLayoutManager = new LinearLayoutManager(context);
-            recyclerView.setLayoutManager(mLinearLayoutManager);
-
-            // Build an empty SensorItemList. It's contents will be dynamically updated.
-            List<SensorItem> arrayList = new ArrayList<>();
-            recyclerView.setAdapter(new SensorItemAdapter(arrayList, mListener));
+            LinearLayoutManager llm = new LinearLayoutManager(context);
+            recyclerView.setLayoutManager(llm);
+            recyclerView.setAdapter(sensorItemAdapter);
         } else {
             Log.e(TAG, "RecyclerView not found?");
         }
+    }
 
-        ConstraintLayout locationPanel = rootView.findViewById(R.id.locationPanel);
+    private SensorItemAdapter setupSensorItemAdapter(@NonNull View view) {
+        // Build an empty SensorItemList. It's contents will be dynamically updated.
+        List<SensorItem> arrayList = new ArrayList<>();
+        SensorItemAdapter sensorItemAdapter =
+                new SensorItemAdapter(
+                        arrayList,
+                        new SensorItemAdapter.SensorItemAdapterListener() {
+                            @Override
+                            public void onItemCheckStateChanged(
+                                    int checkedItemCount, int totalItemCount) {
+                                Log.d(TAG, "onItemCheckStateChanged: " +
+                                        "checked(" + checkedItemCount + ")" +
+                                        "/" +
+                                        "total(" + totalItemCount + ")");
+
+                                CheckBox checkBoxSelectAll =
+                                        view.findViewById(R.id.checkBoxSelectAll);
+                                if (checkBoxSelectAll != null) {
+                                    if (checkedItemCount < 0
+                                            || (checkedItemCount > totalItemCount)) {
+                                        String message = "Invalid CheckBox state?\n" +
+                                                "checked(" + checkedItemCount + ")" +
+                                                "/" +
+                                                "total(" + totalItemCount + ")";
+                                        mListener.onError(TAG + ": " + message);
+                                        return;
+                                    }
+
+                                    if (checkedItemCount == 0) {
+                                        enableSensorOnOffButton(false);
+                                    } else if (checkedItemCount < totalItemCount) {
+                                        if (checkBoxSelectAll.isChecked()) {
+                                            mIsPartialUnchecked = true;
+                                            checkBoxSelectAll.setChecked(false);
+                                            mIsPartialUnchecked = false;
+                                        }
+                                        enableSensorOnOffButton(true);
+                                    } else {
+                                        checkBoxSelectAll.setChecked(true);
+                                        enableSensorOnOffButton(true);
+                                    }
+                                }
+                            }
+
+                            @Override
+                            public void onError(String description) {
+                                mListener.onError(description);
+                            }
+                        }
+                );
+
+        return sensorItemAdapter;
+    }
+
+    private void setupCellularPanel(@NonNull View view) {
+        ConstraintLayout cellularPanel = view.findViewById(R.id.cellularPanel);
+        if (cellularPanel != null) {
+            if (mMonitorCellularSignalStrength) {
+                cellularPanel.setVisibility(View.VISIBLE);
+            } else {
+                cellularPanel.setVisibility(View.GONE);
+            }
+        } else {
+            Log.e(TAG, "CellularPanel not found?");
+        }
+    }
+
+    private void setupLocationPanel(@NonNull View view) {
+        ConstraintLayout locationPanel = view.findViewById(R.id.locationPanel);
         if (mLocationProvider != null) {
             /* Show location panel */
             if (locationPanel != null) {
@@ -149,12 +303,12 @@ public class MainFragment extends Fragment {
             }
 
             TextView tv;
-            tv= rootView.findViewById(R.id.location_provider);
+            tv= view.findViewById(R.id.location_provider);
             if (tv != null) {
                 tv.setText(mLocationProvider);
             }
 
-            tv = rootView.findViewById(R.id.location_value);
+            tv = view.findViewById(R.id.location_value);
             if (tv != null) {
                 tv.setText("N/A");
             }
@@ -164,14 +318,24 @@ public class MainFragment extends Fragment {
                 locationPanel.setVisibility(View.GONE);
             }
         }
+    }
 
-        ToggleButton toggleButton = rootView.findViewById(R.id.toggleButton);
+    private void setupToggleButton(@NonNull View view) {
+        ToggleButton toggleButton = view.findViewById(R.id.toggleButton);
         if (toggleButton != null) {
             toggleButton.setOnCheckedChangeListener(
                     new CompoundButton.OnCheckedChangeListener() {
                         @Override
-                        public void onCheckedChanged(CompoundButton compoundButton, boolean isChecked) {
+                        public void onCheckedChanged(
+                                CompoundButton buttonView, boolean isChecked) {
                             Log.d(TAG, "onCheckedChanged: " + isChecked);
+
+                            CheckBox checkBoxSelectAll =
+                                    view.findViewById(R.id.checkBoxSelectAll);
+                            if (checkBoxSelectAll != null) {
+                                /* Prevent touching sensor list while running */
+                                checkBoxSelectAll.setEnabled(!isChecked);
+                            }
 
                             /* If isChecked is true, call SensorManager for selected types */
                             if (isChecked) {
@@ -185,8 +349,10 @@ public class MainFragment extends Fragment {
         } else {
             Log.e(TAG, "ToggleButton not found?");
         }
+    }
 
-        ImageButton resetButton = rootView.findViewById(R.id.resetButton);
+    private void setupResetButton(@NonNull View view) {
+        ImageButton resetButton = view.findViewById(R.id.resetButton);
         if (resetButton != null) {
             resetButton.setOnClickListener(new View.OnClickListener() {
                 @Override
@@ -194,8 +360,9 @@ public class MainFragment extends Fragment {
                     resetStatistics();
                 }
             });
+        } else {
+            Log.e(TAG, "ResetButton not found?");
         }
-        return rootView;
     }
 
     @Override
@@ -240,34 +407,37 @@ public class MainFragment extends Fragment {
     public void showEmptyMessage(boolean isEmpty) {
         Activity activity = getActivity();
         if (activity != null) {
-            RecyclerView recyclerView =
-                    activity.findViewById(R.id.sensorItemList);
-            TextView emptyView =
-                    activity.findViewById(R.id.emptyView);
-
             if (isEmpty) {
-                if (recyclerView != null) {
-                    recyclerView.setVisibility(View.GONE);
-                }
+                TextView emptyView =
+                        activity.findViewById(R.id.emptyView);
                 if (emptyView != null) {
                     emptyView.setVisibility(View.VISIBLE);
                 }
             } else {
-                if (recyclerView != null) {
-                    recyclerView.setVisibility(View.VISIBLE);
+                View sensorPanel =
+                        activity.findViewById(R.id.sensorPanel);
+                if (sensorPanel != null) {
+                    sensorPanel.setVisibility(View.VISIBLE);
                 }
-                if (emptyView != null) {
-                    emptyView.setVisibility(View.GONE);
-                }
-            }
-
-            ConstraintLayout controlBar = activity.findViewById(R.id.controlBar);
-            if (controlBar != null) {
-                controlBar.setVisibility(View.VISIBLE);
             }
         } else {
             String message = TAG + ": showEmptyMessage: Activity not found?";
             mListener.onError(message);
+        }
+    }
+
+    public void updateCellularInfo(@NonNull String networkType, @NonNull String data) {
+        Activity activity = getActivity();
+        if (activity instanceof MainActivity) {
+            TextView tvNetworkType = activity.findViewById(R.id.network_type);
+            if (tvNetworkType != null) {
+                tvNetworkType.setText(networkType);
+            }
+
+            TextView tvCellularValue = activity.findViewById(R.id.cellular_value);
+            if (tvCellularValue != null) {
+                tvCellularValue.setText(data);
+            }
         }
     }
 
@@ -338,12 +508,10 @@ public class MainFragment extends Fragment {
      * >Communicating with Other Fragments</a> for more information.
      */
     public interface OnFragmentInteractionListener {
-        void onSensorTypesChecked(boolean checked);
-
         void onEnableSensors();
 
         void onDisableSensors();
 
-        void onError(@NonNull String message);
+        void onError(@NonNull String description);
     }
 }
