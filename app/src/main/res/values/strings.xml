@@ -1,3 +1,25 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+  ~ Copyright (c) 2021 National Institute of Informatics
+  ~
+  ~  Licensed to the Apache Software Foundation (ASF) under one
+  ~  or more contributor license agreements.  See the NOTICE file
+  ~  distributed with this work for additional information
+  ~  regarding copyright ownership.  The ASF licenses this file
+  ~  to you under the Apache License, Version 2.0 (the
+  ~  "License"); you may not use this file except in compliance
+  ~  with the License.  You may obtain a copy of the License at
+  ~
+  ~    http://www.apache.org/licenses/LICENSE-2.0
+  ~
+  ~  Unless required by applicable law or agreed to in writing,
+  ~  software distributed under the License is distributed on an
+  ~  "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+  ~  KIND, either express or implied.  See the License for the
+  ~  specific language governing permissions and limitations
+  ~  under the License.
+  -->
+
 <resources>
     <string name="app_name">Sensor Publisher</string>
     <string name="icon_label">Sensor</string>
@@ -28,18 +50,26 @@
     <string name="checkbox_label_select_all">Select all sensor types</string>
     <string name="sensor_item_number_placeholder">#0</string>
     <string name="sensor_type_name_placeholder">Sensor XXX</string>
+    <string name="auth_json_expired">Given \"auth.json\" has expired. Please get the new one.</string>
+    <string name="keychain_alias_unspecified">Please pick an alias from KeyChain</string>
 
     <!-- ErrorDialog -->
     <string name="dialog_title_error">Error</string>
+    <string name="dialog_title_warning">Warning</string>
 
     <!-- InProgressDialog -->
-    <string name="dialog_title_connecting">Connecting to Broker…</string>
+    <string name="dialog_title_connecting">Connecting…</string>
 
     <!-- SettingsActivity -->
     <string name="activity_name_settings">Settings</string>
     <string name="pref_summary_mandatory_notset">Not set: MANDATORY!</string>
     <string name="pref_summary_password_notset">Not set</string>
     <string name="pref_summary_password_mask">*****</string>
+    <string name="preference_file_access_token">access_token</string>
+    <string name="preference_file_config_server">config_server</string>
+    <string name="snackbar_access_token_empty">Please load an access token at first</string>
+    <string name="snackbar_access_token_expired">Sorry, access token has expired</string>
+    <string name="snackbar_access_token_load_ok">OK, access token has successfully loaded</string>
 
     <!--
         Sensor publisher specific settings
@@ -50,7 +80,8 @@
 
     <string name="pref_title_sensor_control">Sensor Control</string>
     <string name="pref_key_sensor_interval_timer">interval_timer</string>
-    <string name="pref_item_sensor_interval_timer">Interval Timer (seconds)</string>
+    <string name="pref_item_sensor_interval_timer">Interval Timer (x100 milliseconds)</string>
+    <string name="pref_default_sensor_interval_timer">50</string>
 
     <string name="pref_title_user_data">User Data</string>
     <string name="pref_key_user_data_publisher">publisher</string>
@@ -73,26 +104,37 @@
     <string name="pref_item_location_latitude">Latitude [-90.0, 90.0]</string>
     <string name="pref_key_location_longitude">location_longitude</string>
     <string name="pref_item_location_longitude">Longitude [-180.0, 180.0]</string>
-    <string name="pref_key_toggle_location_debug">toggle_location_debug</string>
-    <string name="pref_item_toggle_location_debug">Enable DEBUG mode</string>
 
     <!-- CellularSettingsFragment -->
     <string name="pref_title_cellular">Cellular</string>
     <string name="pref_summary_cellular">Cellular attributes</string>
     <string name="pref_key_toggle_cellular">toggle_cellular</string>
     <string name="pref_item_toggle_cellular">Monitor Signal Strengths</string>
-    <string name="pref_key_toggle_cellular_debug">toggle_cellular_debug</string>
-    <string name="pref_item_toggle_cellular_debug">Enable DEBUG mode</string>
 
     <!--
         SINETStream common settings
     -->
+    <string name="pref_category_sinetstream">pref_category_sinetstream</string>
     <string name="pref_title_sinetstream">SINETStream</string>
     <string name="pref_summary_sinetstream">SINETStream control parameters</string>
 
+    <!-- ConfigServerSettingsFragment -->
+    <string name="pref_category_config_server">pref_category_config_server</string>
+    <string name="pref_title_config_server">Configuration Server</string>
+    <string name="pref_summary_config_server">Configuration server access parameters</string>
+    <string name="pref_key_config_server_keypair">config_server_keypair</string>
+    <string name="pref_item_config_server_keypair">Key Pair</string>
+    <string name="pref_key_config_server_select_config">config_server_select_config</string>
+    <string name="pref_item_config_server_select_config">Select Configuration</string>
+    <string name="pref_summary_config_server_select_config">Reload new configuration parameters</string>
+    <string name="pref_key_config_server_show_config">config_server_show_config</string>
+    <string name="pref_item_config_server_show_config">Show Configuration</string>
+    <string name="pref_summary_config_server_show_config">Show current configuration parameters</string>
+
     <!-- SinetStreamSettingsFragment -->
-    <string name="pref_key_toggle_sinetstream_manual_config">Manual Configuration</string>
+    <string name="pref_key_toggle_sinetstream_manual_config">toggle_manual_configuration</string>
     <string name="pref_item_toggle_sinetstream_manual_config">Enable Manual Configuration</string>
+    <string name="pref_title_manual_configuration">Manual Configuration</string>
 
     <!-- ServiceSettingsFragment -->
     <string name="pref_title_service">Service</string>
@@ -136,11 +178,8 @@
     <string name="pref_item_tls_client_certs">Enable Client Certificates</string>
 
     <string name="pref_key_tls_ca_certs">tls_ca_certs</string>
-    <string name="pref_item_tls_ca_certs">CA Certification Filename</string>
     <string name="pref_key_tls_certfile">tls_certfile</string>
-    <string name="pref_item_tls_certfile">Client Certification Filename</string>
     <string name="pref_key_tls_keyfilePassword">tls_keyfilePassword</string>
-    <string name="pref_item_tls_keyfilePassword">Client Certification Password</string>
 
     <string name="pref_key_tls_check_hostname">tls_check_hostname</string>
     <string name="pref_item_tls_check_hostname">Enable Hostname Verification</string>
@@ -189,7 +228,7 @@
     <!-- MqttProtocolSettingsFragment -->
     <string name="pref_title_mqtt_protocol">MQTT Protocol</string>
     <string name="pref_summary_mqtt_protocol">MQTT protocol parameters</string>
-    <string name="pref_key_mqtt_mqtt_version">mqtt_version</string>
+    <string name="pref_key_mqtt_mqtt_version">mqtt_mqtt_version</string>
     <string name="pref_item_mqtt_mqtt_version">Version</string>
     <string name="pref_default_mqtt_version">DEFAULT</string>
     <string name="pref_key_mqtt_qos">mqtt_qos</string>
@@ -219,6 +258,69 @@
     <string name="pref_item_toggle_mqtt_inflight">Enable Max InFlight Messages</string>
     <string name="pref_key_mqtt_inflight_inflight">mqtt_inflight_inflight</string>
     <string name="pref_item_mqtt_inflight_inflight">Inflight</string>
+
+    <!-- DebugOptions -->
+    <string name="pref_category_debug_options">pref_category_debug_options</string>
+    <string name="pref_title_debug_options">Debug Options</string>
+    <string name="pref_key_toggle_protocol_debug">toggle_protocol_debug</string>
+    <string name="pref_item_toggle_protocol_debug">Enable PROTOCOL debug</string>
+    <string name="pref_key_toggle_location_debug">toggle_location_debug</string>
+    <string name="pref_item_toggle_location_debug">Enable LOCATION debug</string>
+    <string name="pref_key_toggle_cellular_debug">toggle_cellular_debug</string>
+    <string name="pref_item_toggle_cellular_debug">Enable CELLULAR debug</string>
+
+    <!-- DeveloperOptionsSettingsFragment -->
+    <string name="pref_title_devopt">Developer Options</string>
+    <string name="pref_key_toggle_devopt_event_logging">devopt_event_logging</string>
+    <string name="pref_item_toggle_devopt_event_logging">Enable Event Logging</string>
+    <string name="pref_key_devopt_log_level">devopt_log_level</string>
+    <string name="pref_item_devopt_log_level">Log Level</string>
+    <string name="pref_default_devopt_log_level">warning</string>
+
+    <!-- AccessTokenFragment -->
+    <string name="pref_title_access_token">Access Token</string>
+    <string name="pref_summary_access_token">Token to access configuration server</string>
+    <string name="pref_key_access_token_server_url">access_token_server_url</string>
+    <string name="pref_item_access_token_server_url">Configuration Server URL</string>
+    <string name="pref_key_access_token_account">access_token_account</string>
+    <string name="pref_item_access_token_account">User Account</string>
+    <string name="pref_key_access_token_secret_key">access_token_secret_key</string>
+    <string name="pref_item_access_token_secret_key">Secret Key</string>
+    <string name="pref_key_access_token_expiration_date">access_token_expiration_date</string>
+    <string name="pref_item_access_token_expiration_date">Expiration Date</string>
+    <string name="pref_key_access_token_action_pickup">access_token_pickup</string>
+    <string name="pref_item_access_token_action_pickup">Pickup access token on device</string>
+    <string name="pref_key_access_token_action_download">access_token_download</string>
+    <string name="pref_item_access_token_action_download">Download access token from Config Server</string>
+
+    <!--
+      KeyPair handling stuff
+      -->
+    <!-- KeyPairListActivity -->
+    <string name="placeholder_keypair_alias">[DUMMY] alias #1</string>
+    <string name="button_add_keypair">Add a new KeyPair</string>
+
+    <!-- KeyPairListFragment -->
+    <string name="title_fragment_keypair_list">KeyPairs@AndroidKeyStore</string>
+    <string name="empty_keypair">No KeyPair data</string>
+    <string name="button_submit_keypair">Submit KeyPair</string>
+    <string name="button_delete_keypair">Delete KeyPair</string>
+
+    <!-- RemoteKeyListFragment -->
+    <string name="title_fragment_remotekey">RemoteKeys@ConfigServer</string>
+    <string name="empty_remotekey">No RemoteKey data</string>
+    <string name="button_delete_remotekey">Delete RemoteKey</string>
+
+    <!-- InfoDialogFragment -->
+    <string name="dialog_title_info">Information</string>
+
+    <!-- ConfirmDialogFragment -->
+    <string name="dialog_title_confirm">Confirmation</string>
+
+    <!-- InputDialogFragment -->
+    <string name="dialog_title_new_keypair">New KeyPair</string>
+    <string name="dialog_hint_keypair_alias">Key Alias</string>
+    <string name="dialog_hint_config_server_url">HTTPS only</string>
 
     <!-- TODO: Remove or change this placeholder text -->
     <string name="hello_blank_fragment">Hello blank fragment</string>

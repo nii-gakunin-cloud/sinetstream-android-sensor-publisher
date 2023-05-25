@@ -1,3 +1,24 @@
+/*
+ * Copyright (c) 2020 National Institute of Informatics
+ *
+ *  Licensed to the Apache Software Foundation (ASF) under one
+ *  or more contributor license agreements.  See the NOTICE file
+ *  distributed with this work for additional information
+ *  regarding copyright ownership.  The ASF licenses this file
+ *  to you under the Apache License, Version 2.0 (the
+ *  "License"); you may not use this file except in compliance
+ *  with the License.  You may obtain a copy of the License at
+ *
+ *    http://www.apache.org/licenses/LICENSE-2.0
+ *
+ *  Unless required by applicable law or agreed to in writing,
+ *  software distributed under the License is distributed on an
+ *  "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+ *  KIND, either express or implied.  See the License for the
+ *  specific language governing permissions and limitations
+ *  under the License.
+ */
+
 package com.example.samplepublisher.ui.main;
 
 import android.app.Activity;
@@ -33,6 +54,10 @@ public class SendFragment extends Fragment {
     private String mAccount = null;
     private String mSecretKey = null;
     private boolean mUseRemoteConfig = false;
+    private boolean mProtocolDebug = false;
+
+    private String mPredefinedDataStream = null;
+    private String mPredefinedServiceName = null;
 
     public SendFragment() {
         // Required empty public constructor
@@ -99,6 +124,9 @@ public class SendFragment extends Fragment {
             if (serviceName != null) {
                 mServiceName = serviceName;
             }
+
+            mProtocolDebug =
+                    bundle.getBoolean(BundleKeys.BUNDLE_KEY_PROTOCOL_DEBUG, false);
         }
     }
 
@@ -209,10 +237,26 @@ public class SendFragment extends Fragment {
         this.mUseRemoteConfig = true;
     }
 
+    public void setPredefinedParameters(
+            @Nullable String dataStream,
+            @Nullable String serviceName) {
+        mPredefinedDataStream = dataStream;
+        mPredefinedServiceName = serviceName;
+    }
+
     public void initializeWriter(@Nullable String alias) {
         if (mSinetStreamWriter != null) {
             if (mUseRemoteConfig) {
-                mSinetStreamWriter.setRemoteConfig(mServerUrl, mAccount, mSecretKey);
+                mSinetStreamWriter.setRemoteConfig(
+                        mServerUrl, mAccount, mSecretKey);
+
+                if (mPredefinedDataStream != null && mPredefinedServiceName != null) {
+                    mSinetStreamWriter.setPredefinedParameters(
+                            mPredefinedDataStream, mPredefinedServiceName);
+                }
+            }
+            if (mProtocolDebug) {
+                mSinetStreamWriter.enableDebug(true);
             }
             mSinetStreamWriter.initialize(mServiceName, alias);
         }

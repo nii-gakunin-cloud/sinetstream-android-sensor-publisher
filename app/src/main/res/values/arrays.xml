@@ -1,3 +1,4 @@
+<?xml version="1.0" encoding="utf-8"?>
 <!--
   ~ Copyright (c) 2021 National Institute of Informatics
   ~
@@ -20,6 +21,13 @@
   -->
 
 <resources>
+    <string-array name="log_level">
+        <item>debug</item>
+        <item>info</item>
+        <item>warning</item>
+        <item>error</item>
+    </string-array>
+
     <string-array name="location_providers">
         <item>gps</item>
         <item>fused</item>

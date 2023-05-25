@@ -30,7 +30,6 @@
     android:orientation="vertical">
 
     <androidx.constraintlayout.widget.ConstraintLayout
-        android:id="@+id/statsPanel"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:layout_weight="1"
@@ -68,7 +67,6 @@
             app:layout_constraintVertical_bias="0.0" />
 
         <TextView
-            android:id="@+id/stats_counter_label"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:layout_marginStart="4dp"

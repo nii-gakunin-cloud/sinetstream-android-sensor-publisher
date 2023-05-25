@@ -2,7 +2,7 @@ apply plugin: 'com.android.application'
 
 android {
     compileSdk 33
-    buildToolsVersion '33.0.1'
+    buildToolsVersion '33.0.2'
 
     defaultConfig {
         applicationId "com.example.samplepublisher"
@@ -40,16 +40,11 @@ repositories {
 
 dependencies {
     implementation fileTree(dir: "libs", include: ["*.jar"])
-    /*
-     * It turned out AppCompat 1.5.0 causes conflict on lifecycle dependency.
-     * We should keep AppCompat untouched until this conflict is resolved.
-     * https://issuetracker.google.com/issues/242384116#comment5
-     */
-    implementation 'androidx.appcompat:appcompat:1.4.2'
+    implementation 'androidx.appcompat:appcompat:1.6.1'
     implementation 'androidx.constraintlayout:constraintlayout:2.1.4'
-    implementation 'androidx.lifecycle:lifecycle-extensions:2.2.0'
+    //implementation 'androidx.lifecycle:lifecycle-extensions:2.2.0'
     implementation 'androidx.coordinatorlayout:coordinatorlayout:1.2.0'
-    implementation 'com.google.android.material:material:1.7.0'
+
     /*
      * Workaround to avoid dependency conflicts.
      * https://issuetracker.google.com/issues/238425626
@@ -59,13 +54,15 @@ dependencies {
         exclude group: 'androidx.lifecycle', module:'lifecycle-viewmodel'
         exclude group: 'androidx.lifecycle', module:'lifecycle-viewmodel-ktx'
     }
-    implementation 'org.yaml:snakeyaml:1.33'
+    implementation 'androidx.recyclerview:recyclerview:1.3.0'
+    implementation 'com.google.android.material:material:1.9.0'
+    implementation 'org.yaml:snakeyaml:2.0'
     testImplementation 'junit:junit:4.13.2'
-    androidTestImplementation 'androidx.test.ext:junit:1.1.4'
-    androidTestImplementation 'androidx.test.espresso:espresso-core:3.5.0'
+    androidTestImplementation 'androidx.test.ext:junit:1.1.5'
+    androidTestImplementation 'androidx.test.espresso:espresso-core:3.5.1'
 
-    implementation 'jp.ad.sinet.stream.android.helper:libhelper:1.6.1'
-    implementation 'jp.ad.sinet.sinetstream:SINETStream-android:1.6.1'
+    implementation 'jp.ad.sinet.stream.android.helper:libhelper:1.8.0'
+    implementation 'jp.ad.sinet.sinetstream:SINETStream-android:1.8.0'
     implementation 'org.eclipse.paho:org.eclipse.paho.client.mqttv3:1.2.5'
     //implementation 'org.eclipse.paho:org.eclipse.paho.android.service:1.1.1'
     implementation 'net.sinetstream:pahomqttandroid-bugfix:1.0.0'

@@ -71,13 +71,13 @@ public class SensorSettingsFragment extends PreferenceFragmentCompat {
                 @Override
                 public boolean onPreferenceChange(@NonNull Preference preference, Object newValue) {
                     String strval = (String) newValue;
-                    long seconds;
+                    long duration;
 
                     if (strval.isEmpty()) {
                         return true; /* Reflect changes from non-empty to empty */
                     }
                     try {
-                        seconds = Long.parseLong(strval);
+                        duration = Long.parseLong(strval);
                     } catch (NumberFormatException e) {
                         AppCompatActivity activity = (AppCompatActivity) getActivity();
                         DialogUtil.showErrorDialog(activity,
@@ -88,12 +88,12 @@ public class SensorSettingsFragment extends PreferenceFragmentCompat {
 
                     /*
                      * SensorEvent.timestamp is set in nanoseconds.
-                     * To prevent overload, we handle interval timer in seconds.
+                     * To prevent overload, we handle interval timer with appropriate lower bound.
                      */
-                    if (seconds <= 0L || (Long.MAX_VALUE / 1000 * 1000) < seconds) {
+                    if (duration < 1L) {
                         AppCompatActivity activity = (AppCompatActivity) getActivity();
                         DialogUtil.showErrorDialog(activity,
-                                "IntervalTimer(" + seconds + ") out of range",
+                                "IntervalTimer(" + duration + ") too short",
                                 null, false);
                         return false;
                     }

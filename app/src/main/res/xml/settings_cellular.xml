@@ -20,8 +20,7 @@
   ~  under the License.
   -->
 
-<PreferenceScreen xmlns:android="http://schemas.android.com/apk/res/android"
-    xmlns:app="http://schemas.android.com/apk/res-auto">
+<PreferenceScreen xmlns:app="http://schemas.android.com/apk/res-auto">
 
     <PreferenceCategory
         app:title="@string/pref_title_cellular">
@@ -31,12 +30,14 @@
             app:title="@string/pref_item_toggle_cellular"
             app:defaultValue="false"/>
 
+        <!-- Move to "settings_developer_options.xml"
         <SwitchPreferenceCompat
             app:key="@string/pref_key_toggle_cellular_debug"
             app:title="@string/pref_item_toggle_cellular_debug"
             app:allowDividerAbove="true"
             app:defaultValue="false"
             app:dependency="@string/pref_key_toggle_cellular"/>
+            -->
     </PreferenceCategory>
 
 </PreferenceScreen>

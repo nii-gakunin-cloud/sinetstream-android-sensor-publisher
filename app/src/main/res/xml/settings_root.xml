@@ -22,12 +22,15 @@
 
 <PreferenceScreen xmlns:app="http://schemas.android.com/apk/res-auto">
     <Preference
-        app:title="@string/pref_title_sensors"
+        app:fragment="com.example.samplepublisher.ui.settings.SensorSettingsFragment"
+        app:icon="@drawable/access_point"
         app:summary="@string/pref_summary_sensors"
-        app:fragment="com.example.samplepublisher.ui.settings.SensorSettingsFragment"/>
+        app:title="@string/pref_title_sensors" />
 
     <Preference
-        app:title="@string/pref_title_sinetstream"
+        app:fragment="com.example.samplepublisher.ui.settings.SinetStreamSettingsFragment"
+        app:icon="@drawable/web"
         app:summary="@string/pref_summary_sinetstream"
-        app:fragment="com.example.samplepublisher.ui.settings.SinetStreamSettingsFragment"/>
+        app:title="@string/pref_title_sinetstream" />
+
 </PreferenceScreen>

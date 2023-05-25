@@ -24,20 +24,23 @@
     <!-- Sensor Control -->
     <PreferenceCategory app:title="@string/pref_title_sensor_control">
         <EditTextPreference
+            app:defaultValue="@string/pref_default_sensor_interval_timer"
+            app:icon="@drawable/timer"
             app:key="@string/pref_key_sensor_interval_timer"
             app:title="@string/pref_item_sensor_interval_timer"
-            app:defaultValue="5"
             app:useSimpleSummaryProvider="true" />
     </PreferenceCategory>
 
     <!-- User Data -->
     <PreferenceCategory app:title="@string/pref_title_user_data">
         <EditTextPreference
+            app:icon="@drawable/account"
             app:key="@string/pref_key_user_data_publisher"
             app:title="@string/pref_item_user_data_publisher"
             app:useSimpleSummaryProvider="true" />
 
         <EditTextPreference
+            app:icon="@drawable/note"
             app:key="@string/pref_key_user_data_note"
             app:title="@string/pref_item_user_data_note"
             app:useSimpleSummaryProvider="true" />
@@ -48,12 +51,14 @@
         <!-- Location -->
         <Preference
             app:fragment="com.example.samplepublisher.ui.settings.LocationSettingsFragment"
+            app:icon="@drawable/map_marker"
             app:summary="@string/pref_summary_location"
             app:title="@string/pref_title_location" />
 
         <!-- Cellular -->
         <Preference
             app:fragment="com.example.samplepublisher.ui.settings.CellularSettingsFragment"
+            app:icon="@drawable/network_strength_4"
             app:summary="@string/pref_summary_cellular"
             app:title="@string/pref_title_cellular" />
     </PreferenceCategory>

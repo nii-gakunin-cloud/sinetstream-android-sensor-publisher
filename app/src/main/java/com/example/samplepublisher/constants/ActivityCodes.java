@@ -26,4 +26,5 @@ public class ActivityCodes {
     public final static int ACTIVITY_CODE_UNSPECIFIED = 0;
     public final static int ACTIVITY_CODE_MAIN = 1;
     public final static int ACTIVITY_CODE_SETTINGS = 2;
+    public final static int ACTIVITY_CODE_KEYPAIR = 3;
 }

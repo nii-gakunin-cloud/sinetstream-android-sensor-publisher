@@ -20,8 +20,7 @@
   ~  under the License.
   -->
 
-<PreferenceScreen xmlns:android="http://schemas.android.com/apk/res/android"
-    xmlns:app="http://schemas.android.com/apk/res-auto">
+<PreferenceScreen xmlns:app="http://schemas.android.com/apk/res-auto">
 
     <PreferenceCategory
         app:title="@string/pref_title_location">
@@ -61,12 +60,14 @@
             app:title="@string/pref_item_location_provider"
             app:useSimpleSummaryProvider="true" />
 
+        <!-- Move to "settings_developer_options.xml"
         <SwitchPreferenceCompat
             app:allowDividerAbove="true"
             app:defaultValue="false"
             app:dependency="@string/pref_key_toggle_location"
             app:key="@string/pref_key_toggle_location_debug"
             app:title="@string/pref_item_toggle_location_debug" />
+            -->
 
     </PreferenceCategory>
 </PreferenceScreen>

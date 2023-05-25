@@ -64,6 +64,15 @@
             </meta-data>
         </activity>
 
+        <activity
+            android:name=".KeyManageActivity"
+            android:screenOrientation="portrait">
+            <meta-data
+                android:name="android.support.PARENT_ACTIVITY"
+                android:value=".SettingsActivity">
+            </meta-data>
+        </activity>
+
         <service android:name="org.eclipse.paho.android.service.MqttService" />
     </application>
 

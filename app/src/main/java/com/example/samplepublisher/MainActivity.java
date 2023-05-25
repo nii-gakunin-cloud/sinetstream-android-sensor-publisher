@@ -31,7 +31,6 @@ import android.os.Build;
 import android.os.Bundle;
 import android.os.Handler;
 import android.os.Looper;
-import android.os.Parcelable;
 import android.util.Log;
 import android.view.MenuItem;
 
@@ -49,7 +48,9 @@ import androidx.recyclerview.widget.RecyclerView;
 
 import com.example.samplepublisher.constants.ActivityCodes;
 import com.example.samplepublisher.constants.BundleKeys;
-import com.example.samplepublisher.ui.main.ErrorDialogFragment;
+import com.example.samplepublisher.ui.configserver.SharedPrefsAccessKey;
+import com.example.samplepublisher.ui.configserver.SharedPrefsConfigServer;
+import com.example.samplepublisher.ui.dialogs.ErrorDialogFragment;
 import com.example.samplepublisher.ui.main.MainFragment;
 import com.example.samplepublisher.ui.main.SendFragment;
 import com.example.samplepublisher.ui.main.SensorItemAdapter;
@@ -70,6 +71,8 @@ import jp.ad.sinet.stream.android.helper.LocationTrackerListener;
 import jp.ad.sinet.stream.android.helper.PermissionHandler;
 import jp.ad.sinet.stream.android.helper.SensorController;
 import jp.ad.sinet.stream.android.helper.SensorListener;
+import jp.ad.sinet.stream.android.helper.constants.LocationProviderType;
+import jp.ad.sinet.stream.android.helper.constants.PermissionTypes;
 import jp.ad.sinet.stream.android.net.cert.KeyChainHandler;
 
 public class MainActivity extends AppCompatActivity implements
@@ -82,11 +85,14 @@ public class MainActivity extends AppCompatActivity implements
         SensorListener {
     private final String TAG = MainActivity.class.getSimpleName();
 
+    private boolean mIsPermissionCheckStarted = false;
+    private boolean mIsPermissionCheckFinished = false;
+    private PermissionHandler mPermissionHandler = null;
+
     /* Sensor handling stuff */
     private SensorViewModel mViewModel = null;
     private final int mClientId = 1;
     private SensorController mSensorController = null;
-    private boolean mIsSensorPermissionGranted = false;
     private ArrayList<Integer> mDeniedSensorTypes = null;
     private ArrayList<Integer> mRunningSensorTypes = null;
 
@@ -113,10 +119,12 @@ public class MainActivity extends AppCompatActivity implements
 
     /* Parameters to be required for the remote configuration server access */
     private boolean mUseConfigServer = false;
+    private boolean mIsProtocolDebug = false;
+    private ConfigServerSettings mConfigServerSettings = null;
     private String mServerUrl = null;
     private String mAccount = null;
     private String mSecretKey = null;
-    private ConfigServerSettings mConfigServerSettings = null;
+    private boolean mIsAccessTokenLoaded = false;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -155,21 +163,30 @@ public class MainActivity extends AppCompatActivity implements
 
                 mUseConfigServer = bundle.getBoolean(
                         BundleKeys.BUNDLE_KEY_USE_CONFIG_SERVER, false);
-                if (mUseConfigServer) {
-                    setupRemoteConfiguration();
-                }
+                mIsProtocolDebug = bundle.getBoolean(
+                        BundleKeys.BUNDLE_KEY_PROTOCOL_DEBUG, false);
                 mIsCellularDebug = bundle.getBoolean(
                         BundleKeys.BUNDLE_KEY_CELLULAR_DEBUG, false);
                 mIsLocationDebug = bundle.getBoolean(
                         BundleKeys.BUNDLE_KEY_LOCATION_DEBUG, false);
+
+                if (mUseConfigServer) {
+                    /*
+                     * Let user pickup an AccessToken which must have downloaded
+                     * on this device.
+                     * Note that series of dialogs may appear during the remote
+                     * configuration processes, if there are multiple choices in
+                     * the SINETStream configuration set.
+                     */
+                    setupRemoteConfiguration();
+                } else {
+                    Log.d(TAG, "Use manually chosen SINETStream configurations");
+                }
             }
 
-            /* Some sensor types may require runtime permissions */
-            checkSensorSettings();
-
-            /* Check shared preference for location settings */
-            checkLocationSettings();
-            checkCellularSettings();
+            /* Check permissions both for system and application run-time */
+            checkPrefsLocationSettings();
+            checkPrefsCellularSettings();
 
             FragmentManager fragmentManager = getSupportFragmentManager();
             FragmentTransaction transaction = fragmentManager.beginTransaction();
@@ -205,12 +222,15 @@ public class MainActivity extends AppCompatActivity implements
              * worker module.
              */
             SendFragment sendFragment = new SendFragment();
-            sendFragment.setArguments(bundle);
+            Bundle bundle2 = ((bundle != null) ? bundle : new Bundle());
+            bundle2.putBoolean(BundleKeys.BUNDLE_KEY_PROTOCOL_DEBUG, mIsProtocolDebug);
+            sendFragment.setArguments(bundle2);
             transaction.add(sendFragment,
                     SendFragment.class.getSimpleName());
 
             transaction.commit();
         }
+        registerPermissionHandler();
     }
 
     @Override
@@ -221,31 +241,7 @@ public class MainActivity extends AppCompatActivity implements
         super.onDestroy();
     }
 
-    private void checkSensorSettings() {
-        PermissionHandler permissionHandler =
-                new PermissionHandler(
-                        MainActivity.this,
-                        new PermissionHandler.PermissionHandlerListener() {
-                            @Override
-                            public void onSensorPermissionGranted() {
-                                mIsSensorPermissionGranted = true;
-                            }
-
-                            @Override
-                            public void onSensorPermissionDenied(
-                                    @NonNull ArrayList<Integer> deniedSensorTypes) {
-                                mDeniedSensorTypes = deniedSensorTypes;
-                            }
-
-                            @Override
-                            public void onError(@NonNull String description) {
-                                MainActivity.this.onError(description);
-                            }
-                        });
-        permissionHandler.run();
-    }
-
-    private void checkCellularSettings() {
+    private void checkPrefsCellularSettings() {
         String key = getString(R.string.pref_key_toggle_cellular);
         if (mSharedPreferences.getBoolean(key, false)) {
             mPrefsCellular = true;
@@ -255,7 +251,7 @@ public class MainActivity extends AppCompatActivity implements
         }
     }
 
-    private void checkLocationSettings() {
+    private void checkPrefsLocationSettings() {
         String key1 = getString(R.string.pref_key_toggle_location);
         String key2 = getString(R.string.pref_key_toggle_location_auto_update);
         String key3 = getString(R.string.pref_key_location_provider);
@@ -272,6 +268,100 @@ public class MainActivity extends AppCompatActivity implements
         } else {
             Log.d(TAG, "Location: DISABLED");
         }
+    }
+
+    @Nullable
+    private String getLocationProviderName() {
+        if (mLocationProvider != null) {
+            if (mLocationProvider.equals(LocationManager.GPS_PROVIDER)) {
+                return LocationManager.GPS_PROVIDER;
+            }
+            if (mLocationProvider.equals(LocationManager.FUSED_PROVIDER)) {
+                if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
+                    return LocationManager.FUSED_PROVIDER;
+                } else {
+                    return "fused";
+                }
+            }
+            Log.w(TAG, "Unknown LocationProvider: " + mLocationProvider);
+        }
+        return null;
+    }
+
+    private void registerPermissionHandler() {
+        /*
+         * Avoid IllegalStateException:
+         * LifecycleOwners must call register before they are STARTED.
+         */
+        mPermissionHandler =
+                new PermissionHandler(this,
+                        new PermissionHandler.PermissionHandlerListener() {
+                            @Override
+                            public void onPermissionChecked(int grantedTypes, int deniedTypes) {
+                                Log.d(TAG, "onPermissionCheckFinished");
+                                mIsPermissionCheckFinished = true;
+
+                                if ((deniedTypes &
+                                        PermissionTypes.ACTIVITY_RECOGNITION) != 0) {
+                                    Log.w(TAG, "Some sensor data unavailable");
+                                    mDeniedSensorTypes = mPermissionHandler.getDeniedSensorTypes();
+                                }
+                                if (mPrefsCellular) {
+                                    if ((grantedTypes &
+                                            PermissionTypes.READ_PHONE_STATE) != 0) {
+                                        onCellularSettingsChecked(true);
+                                    } else
+                                    if ((deniedTypes &
+                                            PermissionTypes.READ_PHONE_STATE) != 0) {
+                                        Log.w(TAG, "Cellular data unavailable");
+                                        mPrefsCellular = false;
+                                    }
+                                }
+                                if (mPrefsLocationAutoUpdate) {
+                                    if ((grantedTypes &
+                                            PermissionTypes.LOCATION) != 0) {
+                                        onLocationSettingsChecked(true);
+                                    } else
+                                    if ((deniedTypes &
+                                            PermissionTypes.LOCATION) != 0) {
+                                        Log.w(TAG, "Location data unavailable");
+                                        mPrefsLocationAutoUpdate = false;
+                                    }
+                                }
+                                onResume();
+                            }
+
+                            @Override
+                            public void onError(@NonNull String description) {
+                                MainActivity.this.onError(description);
+                            }
+                        });
+
+        mPermissionHandler.checkSensorPermissions();
+        if (mPrefsLocationAutoUpdate) {
+            String providerName = getLocationProviderName();
+            if (providerName != null) {
+                mPermissionHandler.checkLocationPermissions(providerName);
+            }
+        }
+        if (mPrefsCellular) {
+            mPermissionHandler.checkCellularPermissions();
+        }
+    }
+
+    private void checkPermissions() {
+        mIsPermissionCheckStarted = true;
+        mPermissionHandler.run();
+        /*
+         * State transition after calling PermissionHandler.run()
+         * would look as follows.
+         *
+         * <MainActivity>
+         *     onPause()
+         *     onStop()
+         *     ...    <-- System Settings
+         *     onResume()
+         */
     }
 
     private void setFragmentOnAttachListener(@NonNull FragmentManager fragmentManager) {
@@ -307,13 +397,13 @@ public class MainActivity extends AppCompatActivity implements
                                 mLocationTracker =
                                         new LocationTracker(
                                                 MainActivity.this,
-                                                LocationManager.GPS_PROVIDER,
+                                                LocationProviderType.GPS,
                                                 mClientId);
                             } else {
                                 mLocationTracker =
                                         new LocationTracker(
                                                 MainActivity.this,
-                                                LocationManager.FUSED_PROVIDER,
+                                                LocationProviderType.FUSED,
                                                 mClientId);
                             }
                         } else {
@@ -321,7 +411,7 @@ public class MainActivity extends AppCompatActivity implements
                             mLocationTracker =
                                     new LocationTracker(
                                             MainActivity.this,
-                                            LocationManager.GPS_PROVIDER,
+                                            LocationProviderType.GPS,
                                             mClientId);
                         }
                         mLocationTracker.start();
@@ -346,30 +436,82 @@ public class MainActivity extends AppCompatActivity implements
 
     private void setupRemoteConfiguration() {
         Log.d(TAG, "setupRemoteConfiguration");
+
+        /* If preloaded AccessToken exists, use it. */
+        SharedPrefsAccessKey sharedPrefsAccessKey =
+                new SharedPrefsAccessKey(this);
+
+        if (sharedPrefsAccessKey.isAccessTokenEmpty()) {
+            Log.d(TAG, "Preloaded AccessToken does not exist");
+        } else {
+            Log.d(TAG, "Going to use preloaded AccessToken");
+            if (sharedPrefsAccessKey.isAccessTokenExpired()) {
+                onError(getString(R.string.auth_json_expired));
+                return;
+            }
+            mServerUrl = sharedPrefsAccessKey.readAccessTokenServerUrl();
+            mAccount = sharedPrefsAccessKey.readAccessTokenAccount();
+            mSecretKey = sharedPrefsAccessKey.readAccessTokenSecretKey();
+            mIsAccessTokenLoaded = true;
+            return;
+        }
+
+        /* Load an AccessToken interactively */
         mConfigServerSettings = new ConfigServerSettings(this,
                 new ConfigServerSettings.ConfigServerSettingsListener() {
+                    /**
+                     * Called when user-specified settings file (auth.json) contains valid
+                     * parameter values.
+                     *
+                     * @param serverUrl      The URL of the configuration server.
+                     * @param account        The login account for the configuration server.
+                     * @param secretKey      The API key published by the configuration server.
+                     * @param expirationDate Expiration date of the secretKey.
+                     */
                     @Override
                     public void onParsed(@NonNull String serverUrl,
                                          @NonNull String account,
-                                         @NonNull String secretKey) {
+                                         @NonNull String secretKey,
+                                         @NonNull Date expirationDate) {
                         mServerUrl = serverUrl;
                         mAccount = account;
                         mSecretKey = secretKey;
+                        /*
+                         * Don't care expirationDate here.
+                         * Let onExpired() handle the event instead.
+                         */
 
-                        buildFragments(null);
+                        mIsAccessTokenLoaded = true;
                     }
 
                     @Override
                     public void onExpired() {
-                        MainActivity.this.onError("Auth.json has expired, get new one");
+                        MainActivity.this.onError(
+                                getString(R.string.auth_json_expired));
                     }
 
                     @Override
-                    public void onError(@NonNull String errmsg) {
-                        MainActivity.this.onError(errmsg);
+                    public void onError(@NonNull String description) {
+                        MainActivity.this.onError(description);
                     }
                 });
+
         mConfigServerSettings.launchDocumentPicker();
+        /*
+         * Expected call flow in this case:
+         *
+         * <ConfigServerSettings>
+         *     ActivityResultLauncher.launch()
+         * <MainActivity>
+         *     onPause()
+         *     onStop()
+         *     ...           <-- DocumentPicker
+         *     onStart()
+         * <ConfigServerSettings>
+         *     ActivityResultLauncher.onActivityResult()
+         * <MainActivity>
+         *     onResume()
+         */
     }
 
     private void clearRemoteConfiguration() {
@@ -423,8 +565,19 @@ public class MainActivity extends AppCompatActivity implements
         super.onStart();
 
         if (mUseConfigServer) {
+            Log.d(TAG, "Use ConfigServer, nothing to do here");
             return;
+        } else {
+            Log.d(TAG, "Manual configuration");
+            if (mIsPermissionCheckFinished) {
+                Log.d(TAG, "Going to start fragments");
+            } else {
+                Log.d(TAG, "Going to check runtime permissions");
+                checkPermissions();
+                return;
+            }
         }
+
         if (getPrefsToggleSslTls()) {
             /* Use SSL/TLS */
             if (getPrefsClientCertificates()) {
@@ -432,7 +585,7 @@ public class MainActivity extends AppCompatActivity implements
                 String alias = mViewModel.getPrivateKeyAlias();
                 if (alias != null) {
                     Log.d(TAG, "Re-use certificate alias: " + alias);
-                    buildFragments(alias);
+                    runFragments(alias);
                 } else {
                     /* Let user select the client certificate */
                     KeyChainHandler kch = new KeyChainHandler();
@@ -446,32 +599,57 @@ public class MainActivity extends AppCompatActivity implements
                                     mViewModel.setPrivateKeyAlias(alias);
 
                                     if (alias != null) {
-                                        buildFragments(alias);
+                                        runFragments(alias);
                                     } else {
-                                        onError("Client certificate has not chosen");
+                                        onError(getString(R.string.keychain_alias_unspecified));
                                     }
                                 }
                             });
                 }
             } else {
                 /* Don't use Client Certificate */
-                buildFragments(null);
+                runFragments(null);
             }
         } else {
             /* Don't use SSL/TLS */
-            buildFragments(null);
+            runFragments(null);
         }
     }
 
-    private void buildFragments(@Nullable String alias) {
-        Log.d(TAG, "buildFragments: alias(" + alias + ")");
+    private void runFragments(@Nullable String alias) {
+        Log.d(TAG, "runFragments: alias(" + alias + ")");
 
         SendFragment sendFragment = lookupSendFragment();
-        if (sendFragment != null) {
-            if (mUseConfigServer) {
-                sendFragment.setRemoteConfig(
-                        mServerUrl, mAccount, mSecretKey);
+
+        if (mUseConfigServer) {
+            /*
+             * Automatic list item selection:
+             * During the configuration server sessions, there may be a case
+             * in which multiple choices are being presented depending on
+             * the configuration content.
+             * Usually, user will have to choose the desired item on the fly,
+             * but also user can skip such interventions by specifying the
+             * selection items beforehand.
+             */
+            SharedPrefsConfigServer sharedPrefsConfigServer =
+                    new SharedPrefsConfigServer(this);
+            String dataStream = sharedPrefsConfigServer.getDataStream();
+            String serviceName = sharedPrefsConfigServer.getServiceName();
+
+            if (sendFragment != null) {
+                if (mServerUrl != null && mAccount != null && mSecretKey != null) {
+                    /* Download SINETStream settings from configuration server */
+                    sendFragment.setRemoteConfig(
+                            mServerUrl, mAccount, mSecretKey);
+                }
+                if (dataStream != null && serviceName != null) {
+                    /* Specify multiple-choice items for automatic selection */
+                    sendFragment.setPredefinedParameters(
+                            dataStream, serviceName);
+                }
             }
+        }
+        if (sendFragment != null) {
             sendFragment.initializeWriter(alias);
         }
         toggleProgressBar(true);
@@ -501,6 +679,42 @@ public class MainActivity extends AppCompatActivity implements
     protected void onResume() {
         Log.d(TAG, "onResume");
         super.onResume();
+
+        if (mUseConfigServer) {
+            Log.d(TAG, "Use ConfigServer");
+            if (mIsAccessTokenLoaded) {
+                Log.d(TAG, "AccessToken has loaded");
+                if (mIsPermissionCheckFinished) {
+                    Log.d(TAG, "Going to run fragments");
+                    runFragments(null);
+                } else {
+                    if (mIsPermissionCheckStarted) {
+                        Log.d(TAG, "Wait until PermissionCheck to finish");
+                    } else {
+                        Log.d(TAG, "Going to check permissions");
+                        checkPermissions();
+                    }
+                    return;
+                }
+            } else {
+                Log.d(TAG, "Wait for the AccessToken to be loaded");
+                return;
+            }
+        } else {
+            Log.d(TAG, "Use local configuration");
+            if (mIsPermissionCheckFinished) {
+                Log.d(TAG, "Going to run fragments");
+                runFragments(null);
+            } else {
+                if (mIsPermissionCheckStarted) {
+                    Log.d(TAG, "Wait until PermissionCheck to finish");
+                } else {
+                    Log.d(TAG, "Going to check permissions");
+                    checkPermissions();
+                }
+                return;
+            }
+        }
 
         /* Bind LocationService to receive location updates */
         if (mLocationTracker != null) {
@@ -760,9 +974,15 @@ public class MainActivity extends AppCompatActivity implements
                     getString(R.string.pref_key_sensor_interval_timer), 10L);
              */
             sval1 = sharedPreferences.getString(
-                    getString(R.string.pref_key_sensor_interval_timer), "10");
-            long seconds = Long.parseLong(sval1);
-            mSensorController.setIntervalTimer(seconds);
+                    getString(R.string.pref_key_sensor_interval_timer),
+                    getString(R.string.pref_default_sensor_interval_timer));
+            try {
+                long duration = Long.parseLong(sval1); /* unit: 100ms */
+                long milliseconds = duration * 100;
+                mSensorController.setIntervalTimer(milliseconds);
+            } catch (NumberFormatException e) {
+                Log.w(TAG, "Invalid interval timer: " + e.getMessage());
+            }
 
             String publisher = sharedPreferences.
                     getString("publisher", null);
@@ -1120,8 +1340,7 @@ public class MainActivity extends AppCompatActivity implements
     }
 
     @Override
-    public void onErrorDialogDismissed(
-            @Nullable Parcelable parcelable, boolean isFatal) {
+    public void onErrorDialogDismissed(boolean isFatal) {
         /* Implementation of ErrorDialogFragment.onErrorDialogDismissed */
 
         toggleProgressBar(false);

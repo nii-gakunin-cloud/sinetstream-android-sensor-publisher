@@ -1,0 +1,67 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+  ~ Copyright (c) 2023 National Institute of Informatics
+  ~
+  ~  Licensed to the Apache Software Foundation (ASF) under one
+  ~  or more contributor license agreements.  See the NOTICE file
+  ~  distributed with this work for additional information
+  ~  regarding copyright ownership.  The ASF licenses this file
+  ~  to you under the Apache License, Version 2.0 (the
+  ~  "License"); you may not use this file except in compliance
+  ~  with the License.  You may obtain a copy of the License at
+  ~
+  ~    http://www.apache.org/licenses/LICENSE-2.0
+  ~
+  ~  Unless required by applicable law or agreed to in writing,
+  ~  software distributed under the License is distributed on an
+  ~  "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+  ~  KIND, either express or implied.  See the License for the
+  ~  specific language governing permissions and limitations
+  ~  under the License.
+  -->
+
+<PreferenceScreen xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto">
+    <!--
+        Material Design Icons:
+        https://pictogrammers.com/library/mdi/icon/
+    -->
+    <PreferenceCategory
+        android:title="@string/pref_title_config_server">
+
+        <Preference
+            app:fragment="com.example.samplepublisher.ui.configserver.AccessTokenFragment"
+            app:icon="@drawable/ticket_account"
+            app:summary="@string/pref_summary_access_token"
+            app:title="@string/pref_title_access_token" />
+
+        <Preference
+            app:icon="@drawable/key_chain"
+            app:key="@string/pref_key_config_server_keypair"
+            app:summary="Public/Private keys for secret data"
+            app:title="@string/pref_item_config_server_keypair">
+            <intent
+                android:targetClass="com.example.samplepublisher.KeyManageActivity"
+                android:targetPackage="com.example.samplepublisher" />
+        </Preference>
+
+        <Preference
+            app:fragment="com.example.samplepublisher.ui.configserver.ConfigCheckerFragment"
+            app:icon="@drawable/form_select"
+            app:key="@string/pref_key_config_server_select_config"
+            app:summary="@string/pref_summary_config_server_select_config"
+            app:title="@string/pref_item_config_server_select_config" />
+
+        <Preference
+            app:fragment="com.example.samplepublisher.ui.configserver.ConfigCheckerFragment"
+            app:icon="@drawable/download"
+            app:key="@string/pref_key_config_server_show_config"
+            app:summary="@string/pref_summary_config_server_show_config"
+            app:title="@string/pref_item_config_server_show_config">
+            <!-- Following item will be passed to the fragment as its argument -->
+            <extra
+                android:name="isDryRun"
+                android:value="TRUE" />
+        </Preference>
+    </PreferenceCategory>
+</PreferenceScreen>

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020-2021 National Institute of Informatics
+ * Copyright (c) 2021 National Institute of Informatics
  *
  *  Licensed to the Apache Software Foundation (ASF) under one
  *  or more contributor license agreements.  See the NOTICE file
@@ -21,17 +21,14 @@
 
 package com.example.samplepublisher;
 
-import android.app.Activity;
-import android.content.Intent;
 import android.content.SharedPreferences;
 import android.os.Build;
 import android.os.Bundle;
-import android.os.Parcelable;
 import android.util.Log;
 import android.view.MenuItem;
+import android.widget.FrameLayout;
 
 import androidx.annotation.NonNull;
-import androidx.annotation.Nullable;
 import androidx.appcompat.app.ActionBar;
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.fragment.app.Fragment;
@@ -39,29 +36,50 @@ import androidx.preference.Preference;
 import androidx.preference.PreferenceFragmentCompat;
 import androidx.preference.PreferenceManager;
 
-import com.example.samplepublisher.constants.ActivityCodes;
-import com.example.samplepublisher.ui.main.ErrorDialogFragment;
+import com.example.samplepublisher.constants.BundleKeys;
+import com.example.samplepublisher.ui.configserver.AccessTokenFragment;
+import com.example.samplepublisher.ui.configserver.ConfigCheckerFragment;
+import com.example.samplepublisher.ui.configserver.ConfigServerSettingsFragment;
+import com.example.samplepublisher.ui.configserver.SharedPrefsAccessKey;
+import com.example.samplepublisher.ui.dialogs.ErrorDialogFragment;
 import com.example.samplepublisher.ui.settings.RootSettingsFragment;
 import com.example.samplepublisher.ui.settings.Xml2Yaml;
+import com.google.android.material.snackbar.Snackbar;
+
+import java.util.Date;
+
+import jp.ad.sinet.stream.android.config.remote.ConfigServerSettings;
 
 public class SettingsActivity extends AppCompatActivity implements
+        AccessTokenFragment.AccessTokenListener,
+        ConfigCheckerFragment.ConfigCheckerListener,
         PreferenceFragmentCompat.OnPreferenceStartFragmentCallback,
         SharedPreferences.OnSharedPreferenceChangeListener,
         ErrorDialogFragment.ErrorDialogListener {
     private final String TAG = SettingsActivity.class.getSimpleName();
 
+    private AccessTokenFragment mAccessTokenFragment = null;
+    private ConfigServerSettings mConfigServerSettings = null;
     private boolean mPreferenceChanged = false;
+
+    private SharedPrefsAccessKey mSharedPrefsAccessKey = null;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_settings);
 
-        if (savedInstanceState == null) {
+        if (savedInstanceState != null) {
+            /* Avoid creating the same fragment sets more than once. */
+            Log.d(TAG, "onCreate: After RESTART");
+        } else {
             getSupportFragmentManager()
                     .beginTransaction()
                     .replace(R.id.settings_container, new RootSettingsFragment())
                     .commit();
+
+            /* LifecycleOwners must call register before they are STARTED */
+            setupRemoteConfiguration();
         }
 
         ActionBar actionBar = getSupportActionBar();
@@ -70,6 +88,14 @@ public class SettingsActivity extends AppCompatActivity implements
             actionBar.setDisplayHomeAsUpEnabled(true);
             actionBar.setHomeButtonEnabled(true); // onOptionsItemSelected
         }
+
+        mSharedPrefsAccessKey = new SharedPrefsAccessKey(this);
+    }
+
+    @Override
+    protected void onDestroy() {
+        clearRemoteConfiguration();
+        super.onDestroy();
     }
 
     /**
@@ -132,6 +158,7 @@ public class SettingsActivity extends AppCompatActivity implements
     @Override
     public boolean onPreferenceStartFragment(
             @NonNull PreferenceFragmentCompat caller, @NonNull Preference pref) {
+        /* Implementation of PreferenceFragmentCompat.OnPreferenceStartFragmentCallback */
         // Instantiate the new Fragment
         String className = pref.getFragment();
         if (className == null) {
@@ -141,9 +168,21 @@ public class SettingsActivity extends AppCompatActivity implements
         final Fragment fragment =
                 getSupportFragmentManager().
                         getFragmentFactory().instantiate(
-                        getClassLoader(), className);
+                                getClassLoader(), className);
+
+        if (fragment instanceof AccessTokenFragment) {
+            /* Keep the fragment for later reference */
+            mAccessTokenFragment = (AccessTokenFragment) fragment;
+        }
+        if (fragment instanceof ConfigServerSettingsFragment ||
+                fragment instanceof AccessTokenFragment) {
+            if (mSharedPrefsAccessKey.isAccessTokenEmpty()) {
+                showSnackBar(getString(R.string.snackbar_access_token_empty));
+            } else if (mSharedPrefsAccessKey.isAccessTokenExpired()) {
+                showSnackBar(getString(R.string.snackbar_access_token_expired));
+            }
+        }
         fragment.setArguments(args);
-        fragment.setTargetFragment(caller, 0);
 
         // Replace the existing Fragment with the new Fragment
         getSupportFragmentManager().
@@ -173,42 +212,103 @@ public class SettingsActivity extends AppCompatActivity implements
      */
     @Override
     public void onSharedPreferenceChanged(SharedPreferences sharedPreferences, String key) {
+        /* Implementation of SharedPreferences.OnSharedPreferenceChangeListener */
         Log.d(TAG, "OnSharedPreferenceChanged: key(" + key + ")");
         mPreferenceChanged = true;
     }
 
     @Override
-    public void onErrorDialogDismissed(
-            @Nullable Parcelable parcelable, boolean isFatal) {
-        /* Do nothing here */
+    public void onCallDocumentPicker() {
+        /* Implementation of AccessTokenFragment.AccessTokenListener */
+        if (mConfigServerSettings != null) {
+            mConfigServerSettings.launchDocumentPicker();
+        }
     }
 
-    /**
-     * Called when the activity has detected the user's press of the back
-     * key. The {@link #getOnBackPressedDispatcher() OnBackPressedDispatcher} will be given a
-     * chance to handle the back button before the default behavior of
-     * {@link Activity#onBackPressed()} is invoked.
-     *
-     * @see #getOnBackPressedDispatcher()
-     */
+    private void setupRemoteConfiguration() {
+        Log.d(TAG, "setupRemoteConfiguration");
+        mConfigServerSettings = new ConfigServerSettings(this,
+                new ConfigServerSettings.ConfigServerSettingsListener() {
+                    @Override
+                    public void onParsed(@NonNull String serverUrl,
+                                         @NonNull String account,
+                                         @NonNull String secretKey,
+                                         @NonNull Date expirationDate) {
+                        mSharedPrefsAccessKey.writeAccessToken(
+                                serverUrl, account, secretKey, expirationDate
+                        );
+                        showSnackBar(getString(R.string.snackbar_access_token_load_ok));
+
+                        if (mAccessTokenFragment != null) {
+                            mAccessTokenFragment.readAccessToken();
+                        }
+                    }
+
+                    @Override
+                    public void onExpired() {
+                        SettingsActivity.this.onWarning(
+                                getString(R.string.auth_json_expired));
+                    }
+
+                    @Override
+                    public void onError(@NonNull String description) {
+                        SettingsActivity.this.onError(description);
+                    }
+                });
+    }
+
+    private void clearRemoteConfiguration() {
+        Log.d(TAG, "clearRemoteConfiguration");
+        if (mConfigServerSettings != null) {
+            mConfigServerSettings.clearDocumentPicker();
+            mConfigServerSettings = null;
+        }
+    }
+
+    private void showSnackBar(@NonNull String message) {
+        FrameLayout layout = findViewById(R.id.settings_container);
+        Snackbar snackbar = Snackbar.make(layout, message, Snackbar.LENGTH_SHORT);
+        snackbar.show();
+    }
+
     @Override
-    public void onBackPressed() {
+    public void onWarning(@NonNull String description) {
+        /* Implementation of AccessTokenFragment.AccessTokenListener */
+        showErrorDialog(description, false);
+    }
+
+    @Override
+    public void onError(@NonNull String description) {
+        /* Implementation of AccessTokenFragment.AccessTokenListener */
+        /* Implementation of ConfigCheckerFragment.ConfigCheckerListener */
+        showErrorDialog(description, true);
+    }
+
+    private void showErrorDialog(@NonNull String description, boolean isFatal) {
+        ErrorDialogFragment edf = new ErrorDialogFragment(this);
+        Bundle bundle = new Bundle();
+        bundle.putString(BundleKeys.BUNDLE_KEY_ERROR_MESSAGE, description);
+        bundle.putBoolean(BundleKeys.BUNDLE_KEY_ERROR_FATAL, isFatal);
+        edf.setArguments(bundle);
+
+        try {
+            edf.show(getSupportFragmentManager(), ErrorDialogFragment.class.getSimpleName());
+        } catch (IllegalStateException e) {
+            Log.e(TAG, "XXX: ErrorDialogFragment: " + e);
+            onErrorDialogDismissed(true);
+        }
+
         /*
-         * It turns out that simply calling "setResult() and finish()"
-         * does not work as expected; we want the control flow to backtrack
-         * the settings hierarchy, instead of jumping back to the top.
+         * If user pressed OK button on the error dialog window,
+         * ErrorDialogFragment.onErrorDialogDismissed() will be called.
          */
-        super.onBackPressed();
-//        /*
-//         * It seems strange, but calling super.onBackPressed() seems to
-//         * nullify the setResult() effect.
-//         *
-//        super.onBackPressed();
-//         */
-//        Log.i(TAG, "Going to finish myself...");
-//        Intent intent = new Intent();
-//        intent.putExtra(ActivityCodes.KEY, ActivityCodes.ACTIVITY_CODE_SETTINGS);
-//        setResult(Activity.RESULT_OK, intent);
-//        finish();
+    }
+
+    @Override
+    public void onErrorDialogDismissed(boolean isFatal) {
+        /* Implementation of ErrorDialogFragment.ErrorDialogListener */
+        if (isFatal) {
+            onBackPressed();
+        }
     }
 }
