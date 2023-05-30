@@ -10,11 +10,17 @@ https://keepachangelog.com/
 ### Security
 --->
 
-## [v1.8.0] - 2023-05-XX
+## [v1.8.0] - 2023-05-26
 
 ### Added
 
-- SettingsActivity: SINETStream: [SAME as above]
+- SettingsActivity: SINETStream: Add icons for some items.
+- SettingsActivity: SINETStream: Split settings for manual and remote configurations.
+- SettingsActivity: SINETStream: Add settings screen for remote configuration.
+    - Access token picker
+    - Key pair management on local device
+    - Public key management on the config-server
+    - Pre-download and keep REST-API parameters in the shared preference
 - SettingsActivity: Sensor: Add icons for some items.
 
 ### Changed
